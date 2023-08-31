@@ -17,7 +17,7 @@
     <version>1.0-beta-SNAPSHOT</version>
     <modules>
         <module>kg-ctl-core</module>
-        <module>quick-start-ctl</module>
+        <module>kg-task-quickstart</module>
     </modules>
 
 
