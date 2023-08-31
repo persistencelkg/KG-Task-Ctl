@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "kg.job.base-packages",
+      "type": "java.lang.String",
+      "description": "Must use, Description for base-packages."
+    },
+    {
+      "name": "kg.job.internal-base-package",
+      "type": "java.lang.String",
+      "description": "Must use, Scan springboot base package."
+    },
+    {
+      "name": "kg.job.default-scan-mapper-packages",
+      "type": "java.lang.String",
+      "description": "Default value: com.**.mapper, com.**.dao, org.**.mapper, org.**.dao."
+    }
+  ] }
