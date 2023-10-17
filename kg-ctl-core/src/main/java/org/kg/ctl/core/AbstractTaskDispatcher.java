@@ -2,6 +2,7 @@ package org.kg.ctl.core;
 
 
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
+import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.dao.TaskExecuteParam;
 import org.kg.ctl.dao.TaskPo;
@@ -51,6 +52,7 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
 
     @Value("${spring.profiles.active:local}")
     private String env;
+
 
     protected void runTask() {
         try {

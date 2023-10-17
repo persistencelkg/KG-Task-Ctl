@@ -40,13 +40,17 @@ public class TaskGranularConfig {
     /**
      * 是否是混合业务
      */
-    private boolean mixedBiz = true;
+//    private boolean mixedBiz = true;
+
+    private String bizScene;
+
+    private Integer mixThreadCount;
 
     private boolean run;
 
     public static void main(String[] args) {
         TaskGranularConfig taskGranularConfig = new TaskGranularConfig();
-        taskGranularConfig.setMixedBiz(true);
+//        taskGranularConfig.setMixedBiz(true);
         taskGranularConfig.setRun(false);
         taskGranularConfig.setTimeSplitDimension("mintue");
         taskGranularConfig.setBizPeekDuration("6-21");

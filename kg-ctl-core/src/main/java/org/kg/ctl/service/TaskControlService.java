@@ -2,11 +2,14 @@ package org.kg.ctl.service;
 
 import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.TaskDynamicConfig;
+import org.kg.ctl.strategy.ThreadCountStrategy;
 import org.springframework.util.ObjectUtils;
 
 import java.time.LocalTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @description:
@@ -30,13 +33,32 @@ public interface TaskControlService extends TaskGranularService {
      * @return
      */
     default Integer getConcurrentThreadCount() {
-        return getDefaultThreadCount();
+        return getThreadCount();
     }
 
     default Integer getDefaultThreadCount() {
-        return getDynamicConcurrentThreadNum(isMixedBiz());
+//        return getDynamicConcurrentThreadNum(isMixedBiz());
+        return null;
     }
 
+    default Integer customThreadCount() {
+        return null;
+    }
+
+    default Integer getThreadCount() {
+        String bizScene = TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getBizScene();
+        int strategy;
+        try {
+            Integer scene = Integer.valueOf(bizScene);
+            strategy = ThreadCountStrategy.getStrategy(scene).getThreadCount();
+        } catch (Exception e) {
+            strategy = ThreadCountStrategy.getStrategy(bizScene).getThreadCount();
+        }
+        if (Objects.equals(strategy, ThreadCountStrategy.MIX.getThreadCount())) {
+            return Objects.isNull(customThreadCount()) ? strategy : customThreadCount();
+        }
+        return strategy;
+    }
 
     /**
      * 每个业务开关都必须自己控制

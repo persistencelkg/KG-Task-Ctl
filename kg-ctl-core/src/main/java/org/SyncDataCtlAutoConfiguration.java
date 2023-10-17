@@ -11,7 +11,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
-import javax.annotation.PostConstruct;
+import static org.SyncDataCtlAutoConfiguration.DEFAULT_SCAN_MAPPER;
+import static org.SyncDataCtlAutoConfiguration.INTERNAL_BASE_PACKAGE_JEXL;
 
 /**
  * @description: 脚手架的自动装配
@@ -21,27 +22,34 @@ import javax.annotation.PostConstruct;
 @Configuration
 @ConditionalOnWebApplication
 @ConditionalOnClass(TaskDynamicConfig.class)
-@ComponentScan(basePackages = {"${kg.job.internal-base-package}", "${kg.job.base-packages}"})
-@MapperScan(value = {"${kg.job.default-scan-mapper-packages}"})
+@ComponentScan(basePackages = INTERNAL_BASE_PACKAGE_JEXL)
+@MapperScan(value = DEFAULT_SCAN_MAPPER)
 // aim to support AopContext#currentProxy()
 @EnableAspectJAutoProxy(exposeProxy = true)
 //@AutoConfigureBefore(MybatisPlusAutoConfiguration.class)
 @Slf4j
 public class SyncDataCtlAutoConfiguration implements SmartInitializingSingleton {
 
-    @Value("${kg.job.internal-base-package}")
+    protected static final String CUSTOM_BASE_PACKAGES = "${kg.job.base-packages:}}";
+    protected static final String INTERNAL_BASE_PACKAGE_JEXL ="${kg.job.internal-base-package:'org.kg.ctl'," + CUSTOM_BASE_PACKAGES;
+
+    protected static final String CUSTOM_SCAN_MAPPERS = "${kg.job.scan-mapper-packages:}}";
+    protected static final String DEFAULT_SCAN_MAPPER = "${kg.job.default-scan-mapper-packages:'com.**.mapper, com.**.dao, org.**.mapper, org.**.dao'," + CUSTOM_SCAN_MAPPERS;
+
+
+    @Value(INTERNAL_BASE_PACKAGE_JEXL)
     private String internalBasePackage;
 
-    @Value("${kg.job.default-scan-mapper-packages}")
+    @Value(DEFAULT_SCAN_MAPPER)
     private String defaultScanMapper;
 
-    @Value("${kg.job.base-packages:}")
+    @Value(CUSTOM_BASE_PACKAGES)
     private String basePackages;
 
     @Override
     public void afterSingletonsInstantiated() {
         log.info("------------- ctl load start ------------- >>>");
-        log.info("clt default-packages={} default-scan-mapper={}", String.join(",", internalBasePackage, basePackages), defaultScanMapper);
+        log.info("clt default-packages={} default-scan-mapper={}", internalBasePackage, defaultScanMapper);
         log.info("ctl current job config:{}", TaskDynamicConfig.getAll());
         log.info("------------- ctl load end ------------- >>>");
     }

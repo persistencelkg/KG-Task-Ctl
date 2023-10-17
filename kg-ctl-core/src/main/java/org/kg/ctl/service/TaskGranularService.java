@@ -22,9 +22,9 @@ public interface TaskGranularService {
      *
      * @return 是混合业务
      */
-    default boolean isMixedBiz() {
-        return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).isMixedBiz();
-    }
+//    default boolean isMixedBiz() {
+//        return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).isMixedBiz();
+//    }
 
     /**
      * 定制化业务的高峰期
