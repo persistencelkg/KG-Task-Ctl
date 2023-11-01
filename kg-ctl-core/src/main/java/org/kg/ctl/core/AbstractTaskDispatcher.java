@@ -9,20 +9,24 @@ import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
 import org.kg.ctl.dao.enums.TaskDimensionEnum;
 import org.kg.ctl.dao.enums.TaskStatusEnum;
+import org.kg.ctl.dao.enums.TaskTimeSplitEnum;
 import org.kg.ctl.manager.TaskHandler;
 import org.kg.ctl.service.DingDingService;
 import org.kg.ctl.service.TaskControlService;
 import org.kg.ctl.service.TaskMachine;
+import org.kg.ctl.util.DateTimeUtil;
 import org.kg.ctl.util.JsonUtil;
 import org.kg.ctl.util.TaskUtil;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Resource;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -91,7 +95,14 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
         Assert.notNull(instance, "you not point at task split dimension such as:" + Arrays.toString(TaskDimensionEnum.values()));
         Assert.isTrue(isNegative(this.getSleepTime()), "each split task must have valid milliseconds sleep time");
         Assert.isTrue(isNegative(this.getBatchSize()) && isNegative(this.getConcurrentThreadCount()), "each split task must have valid batch size");
-        Assert.notNull(this.getTaskSplitDuration(), "you choose time range to split task， must point at duration ");
+        // 统一时间校验
+        if (!ObjectUtils.isEmpty(taskSnapShot.getSyncDimension()) && !ObjectUtils.isEmpty(taskSnapShot.getSyncInterval())) {
+            try {
+                Assert.notNull(LocalDateTime.now().plus(TaskTimeSplitEnum.getDuration(taskSnapShot.getSyncDimension(), taskSnapShot.getSyncInterval())), "task assign dimension not valid");
+            } catch (Exception e) {
+                Assert.isTrue(false, "task assign dimension not valid: " +  e.getMessage());
+            }
+        }
         // 定制参数校验
         checkValid(taskSnapShot);
         return instance;
@@ -139,6 +150,9 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
         taskHandler.saveSnapshot(taskJob);
         // 生产所有子任务
         List<TaskSegment> taskSegementList = splitTask(simpleName, taskSnapShot);
+        if (CollectionUtils.isEmpty(taskSegementList)) {
+            throw new IllegalArgumentException("task:[" + simpleName + "] not split valid segments，can not save snapshot");
+        }
         taskHandler.saveSegment(taskSegementList);
         // 前置任务由BatchSaveTaskListener完成
         log.info("generate global snapshot:{} ---> build success, last batch task segment list size:{}", taskSnapShot, taskSegementList.size());
@@ -282,6 +296,4 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
     protected TaskPo.InitialSnapShot instantiationSnapShot(TaskExecuteParam param) {
         return TaskPo.InitialSnapShot.convertToSnapShot(param);
     }
-
-
 }

@@ -26,7 +26,11 @@ public enum TaskDimensionEnum {
 
     public static TaskDimensionEnum getInstance(TaskPo.InitialSnapShot taskSnapShot) {
         boolean bizId = !ObjectUtils.isEmpty(taskSnapShot.getDataList());
-        boolean timeRange = !ObjectUtils.isEmpty(taskSnapShot.getStartTime()) && !ObjectUtils.isEmpty(taskSnapShot.getEndTime());
+        boolean timeRange = !ObjectUtils.isEmpty(taskSnapShot.getStartTime())
+                            && !ObjectUtils.isEmpty(taskSnapShot.getEndTime())
+                            && !ObjectUtils.isEmpty(taskSnapShot.getSyncDimension())
+                            && !ObjectUtils.isEmpty(taskSnapShot.getSyncInterval());
+
         boolean tableIndex = !ObjectUtils.isEmpty(taskSnapShot.getMinId()) && !ObjectUtils.isEmpty(taskSnapShot.getMaxId());
         if (bizId) {
            return BIZ_ID;
@@ -35,7 +39,7 @@ public enum TaskDimensionEnum {
         } else if (timeRange) {
            return TIME_RANGE;
         }
-        return DEFAULT;
+        return null;
 
     }
 }

@@ -30,6 +30,21 @@ public class TaskExecuteParam {
 
     private Collection<?> dataList;
 
+    /**
+     * 同步模式
+     */
+    private Integer mode;
+    /**
+     * 同步纬度，当选择时间纬度才会使用
+     * such as： year, month，day
+     */
+    private String syncDimension;
+    /**
+     * 同步间隔
+     */
+    private Integer syncInterval;
+
+
 
 
 

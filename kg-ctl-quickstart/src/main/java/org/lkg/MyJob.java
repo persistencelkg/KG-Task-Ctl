@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class MyJob extends TableIndexRangeProcessor<Order> {
 
 
+
     @XxlJob("doBatchSyncOrder")
     public void doBatchSyncOrder() {
         super.runTask();
