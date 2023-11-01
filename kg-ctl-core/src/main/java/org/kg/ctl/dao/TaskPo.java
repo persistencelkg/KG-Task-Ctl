@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.enums.DataSourceEnum;
+import org.kg.ctl.dao.enums.TaskTimeSplitEnum;
 import org.kg.ctl.util.DateTimeUtil;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -66,6 +67,10 @@ public class TaskPo {
     @Builder
     @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
     public static class InitialSnapShot {
+
+        public static final int INCR_SYNC = 0;
+        public static final int ALL_INF_SYNC = 1;
+
         private LocalDateTime startTime;
         private LocalDateTime endTime;
         private String targetTime;
@@ -76,11 +81,25 @@ public class TaskPo {
         private Integer minId;
         private Integer maxId;
         /**
-         * DS为es index为索引名
-         * ds为mysql index为表前缀
+         * es index为索引名
+         * mysql index为表前缀
          */
         private String index;
         private String ds;
+
+        /**
+         * 同步模式
+         */
+        private Integer mode;
+        /**
+         * 同步纬度，当选择时间纬度才会使用
+         * such as： year, month，day
+         */
+        private String syncDimension;
+        /**
+         * 同步间隔
+         */
+        private Integer syncInterval;
 
 
         public static InitialSnapShot convertToSnapShot(TaskExecuteParam param) {
@@ -94,6 +113,8 @@ public class TaskPo {
                 String tableRange = param.getTableRange();
                 String[] split = tableRange.split(JobConstants.LINE);
                 build.minId(Integer.valueOf(split[0])).maxId(Integer.valueOf(split[1]));
+                build.syncDimension(param.getSyncDimension());
+                build.syncInterval(param.getSyncInterval());
             }
             if (Objects.nonNull(param.getStartTime()) && Objects.nonNull(param.getEndTime())) {
                 build.startTime(DateTimeUtil.parse(param.getStartTime())).endTime(DateTimeUtil.parse(param.getEndTime()));
@@ -158,7 +179,7 @@ public class TaskPo {
 
 
     public static void main(String[] args) {
-        String str ="{\"start_time\":\"2023-08-19T23:11::11\",\"end_time\":null,\"data_list\":['2','33'],\"min_id\":null,\"max_id\":null,\"index\":\"22A\",\"ds\":null}";
+        String str = "{\"mode\":1,\"start_time\":\"2023-08-19T23:11::11\",\"end_time\":null,\"data_list\":['2','33'],\"min_id\":null,\"max_id\":null,\"index\":\"22A\",\"ds\":null}";
         System.out.println(str);
 
         ArrayList<Object> objects = new ArrayList<>();

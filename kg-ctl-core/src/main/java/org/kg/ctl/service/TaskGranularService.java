@@ -36,22 +36,22 @@ public interface TaskGranularService {
     }
 
 
-    default TemporalAmount getTaskSplitDuration() {
-        return TaskTimeSplitEnum.getDuration(getTaskSplitTimeStr(), getTaskSplitTimeSize());
-    }
+//    default TemporalAmount getTaskSplitDuration() {
+//        return TaskTimeSplitEnum.getDuration(getTaskSplitTimeStr(), getTaskSplitTimeSize());
+//    }
 
     /**
      * 任务切分的时间粒度
      *
      * @return 默认按 1 minute 切分
      */
-    default Integer getTaskSplitTimeSize() {
-        return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getTimeSplitSize();
-    }
+//    default Integer getTaskSplitTimeSize() {
+//        return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getTimeSplitSize();
+//    }
 
-    default String getTaskSplitTimeStr() {
-        return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getTimeSplitDimension();
-    }
+//    default String getTaskSplitTimeStr() {
+//        return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getTimeSplitDimension();
+//    }
 
     /**
      * 批量任务大小

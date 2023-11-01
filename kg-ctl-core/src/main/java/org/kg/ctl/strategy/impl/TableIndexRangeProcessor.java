@@ -3,6 +3,7 @@ package org.kg.ctl.strategy.impl;
 import org.kg.ctl.core.AbstractTaskFromTo;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
+import org.kg.ctl.dao.enums.TaskTimeSplitEnum;
 import org.kg.ctl.util.TaskUtil;
 import org.springframework.util.Assert;
 
@@ -33,7 +34,8 @@ public abstract class TableIndexRangeProcessor<T> extends AbstractTaskFromTo<T> 
     @Override
     protected List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
 
-        List<TaskUtil.TimeSegment> timeRangeList = TaskUtil.list(initialSnapShot.getStartTime(), initialSnapShot.getEndTime(), this.getTaskSplitDuration());
+        List<TaskUtil.TimeSegment> timeRangeList = TaskUtil.list(initialSnapShot.getStartTime(), initialSnapShot.getEndTime(),
+                TaskTimeSplitEnum.getDuration(initialSnapShot.getSyncDimension(), initialSnapShot.getSyncInterval()));
         List<TaskSegment> list = new ArrayList<>();
         for (TaskUtil.TimeSegment val : timeRangeList) {
             List<TaskSegment> tempList = TaskUtil.list(taskId, initialSnapShot.getMinId(), initialSnapShot.getMaxId(), this.getBatchSize());

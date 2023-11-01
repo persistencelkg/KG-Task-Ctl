@@ -3,6 +3,7 @@ package org.kg.ctl.strategy.impl;
 import org.kg.ctl.core.AbstractTaskFromTo;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
+import org.kg.ctl.dao.enums.TaskTimeSplitEnum;
 import org.kg.ctl.util.TaskUtil;
 import org.springframework.util.Assert;
 
@@ -25,7 +26,8 @@ public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> 
 
     @Override
     protected List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
-        return TaskUtil.list(taskId, initialSnapShot.getStartTime(), initialSnapShot.getEndTime(), this.getTaskSplitDuration());
+        return TaskUtil.list(taskId, initialSnapShot.getStartTime(), initialSnapShot.getEndTime(),
+                TaskTimeSplitEnum.getDuration(initialSnapShot.getSyncDimension(), initialSnapShot.getSyncInterval()));
     }
 
     @Override
@@ -35,7 +37,7 @@ public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> 
 
     @Override
     protected boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegement) {
-        return initialSnapShot.getEndTime().equals(taskSegement.getEndTime());
+        return initialSnapShot.getEndTime().isBefore(taskSegement.getEndTime());
     }
 
 }
