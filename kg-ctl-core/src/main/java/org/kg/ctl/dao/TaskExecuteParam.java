@@ -15,37 +15,47 @@ public class TaskExecuteParam {
 
     private String targetTime;
 
+
     private String startTime;
+
 
     private String endTime;
 
 
     // 当前仅支持table_X 格式的分表
+
     private String tablePreFix;
+
 
     private String tableRange;
 
 
     private String targetBizId;
 
+
     private Collection<?> dataList;
 
     /**
      * 同步模式
      */
+
     private Integer mode;
+
     /**
-     * 同步纬度，当选择时间纬度才会使用
-     * such as： year, month，day
+     * 同步间隔: P1D
      */
-    private String syncDimension;
+
+    private String syncInterval;
+
     /**
-     * 同步间隔
+     * 同步周期：T-1D T+1D T-1H TOD
      */
-    private Integer syncInterval;
+    private String syncPeriod;
 
 
-
-
+    /**
+     * 在当前时间多久之前开始同步
+     */
+    private String beforeNowInterval;
 
 }

@@ -2,14 +2,12 @@ package org.kg.ctl.core;
 
 
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
-import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.dao.TaskExecuteParam;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
 import org.kg.ctl.dao.enums.TaskDimensionEnum;
 import org.kg.ctl.dao.enums.TaskStatusEnum;
-import org.kg.ctl.dao.enums.TaskTimeSplitEnum;
 import org.kg.ctl.manager.TaskHandler;
 import org.kg.ctl.service.DingDingService;
 import org.kg.ctl.service.TaskControlService;
@@ -28,6 +26,7 @@ import javax.annotation.Resource;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -88,22 +87,18 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
 
     protected abstract void checkValid(TaskPo.InitialSnapShot taskSnapShot);
 
+
     private TaskDimensionEnum prepareBuildTask(TaskPo.InitialSnapShot taskSnapShot) {
+        // config check
+        Assert.isTrue(isNegative(this.getSleepTime()), "each split task must have valid milliseconds sleep time");
+        Assert.isTrue(isNegative(this.getBatchSize()) && isNegative(this.getConcurrentThreadCount()), "each split task must have valid batch size");
+        // param check
         Assert.notNull(taskSnapShot, "please generate global snapshot with TaskCtlGenerator.list(...)");
         TaskDimensionEnum instance = TaskDimensionEnum.getInstance(taskSnapShot);
         // 基础参数校验
         Assert.notNull(instance, "you not point at task split dimension such as:" + Arrays.toString(TaskDimensionEnum.values()));
-        Assert.isTrue(isNegative(this.getSleepTime()), "each split task must have valid milliseconds sleep time");
-        Assert.isTrue(isNegative(this.getBatchSize()) && isNegative(this.getConcurrentThreadCount()), "each split task must have valid batch size");
-        // 统一时间校验
-        if (!ObjectUtils.isEmpty(taskSnapShot.getSyncDimension()) && !ObjectUtils.isEmpty(taskSnapShot.getSyncInterval())) {
-            try {
-                Assert.notNull(LocalDateTime.now().plus(TaskTimeSplitEnum.getDuration(taskSnapShot.getSyncDimension(), taskSnapShot.getSyncInterval())), "task assign dimension not valid");
-            } catch (Exception e) {
-                Assert.isTrue(false, "task assign dimension not valid: " +  e.getMessage());
-            }
-        }
-        // 定制参数校验
+        taskSnapShot.checkValid(instance);
+        // param custom check
         checkValid(taskSnapShot);
         return instance;
 
@@ -129,30 +124,35 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
 
         // 预校验
         TaskDimensionEnum instance = prepareBuildTask(taskSnapShot);
-        taskJob.setInitialSnapShot(JsonUtil.toJson(taskSnapShot));
         taskJob.setTaskDimension(instance.getDimension());
 
-        AbstractTaskDispatcher abstractTaskDispatcher = (AbstractTaskDispatcher) AopContext.currentProxy();
-        List<TaskSegment> taskSegementList = abstractTaskDispatcher.saveSnapshot(simpleName, taskJob, taskSnapShot, instance);
+        splitAndRunTask(taskJob, taskSnapShot);
+    }
 
+    private boolean splitAndRunTask(TaskPo taskJob, TaskPo.InitialSnapShot taskSnapShot) {
+        AbstractTaskDispatcher abstractTaskDispatcher = (AbstractTaskDispatcher) AopContext.currentProxy();
+        List<TaskSegment> taskSegementList = abstractTaskDispatcher.saveOrUpdateSnapshot(taskJob, taskSnapShot);
         // 按机器实例切分
         List<TaskSegment> belongOwnTaskList = TaskUtil.list(taskSegementList, getIndex(), getTotalCount());
         // 执行任务
         doTask(taskSnapShot, belongOwnTaskList);
         // 尝试完结任务
-        tryFinishJob(taskJob, taskSnapShot, taskSegementList.get(taskSegementList.size() - 1));
+        return tryFinishJob(taskJob, taskSnapShot, taskSegementList.get(taskSegementList.size() - 1));
     }
 
 
     @Transactional(rollbackFor = Exception.class)
-    public List<TaskSegment> saveSnapshot(String simpleName, TaskPo taskJob, TaskPo.InitialSnapShot taskSnapShot, TaskDimensionEnum instance) {
-        // 保存全局快照
-        taskHandler.saveSnapshot(taskJob);
+    public List<TaskSegment> saveOrUpdateSnapshot(TaskPo taskJob, TaskPo.InitialSnapShot taskSnapShot) {
         // 生产所有子任务
-        List<TaskSegment> taskSegementList = splitTask(simpleName, taskSnapShot);
+        List<TaskSegment> taskSegementList = splitTask(taskJob.getTaskId(), taskSnapShot);
         if (CollectionUtils.isEmpty(taskSegementList)) {
-            throw new IllegalArgumentException("task:[" + simpleName + "] not split valid segments，can not save snapshot");
+            throw new IllegalArgumentException("task:[" + taskJob.getTaskId() + "] not split valid segments，can not save snapshot");
         }
+        taskJob.setInitialSnapShot(JsonUtil.toJson(taskSnapShot));
+        taskJob.setMode(taskSnapShot.getMode());
+        // 保存全局快照
+        taskHandler.saveOrUpdateSnapshot(taskJob);
+        // 保存子快照
         taskHandler.saveSegment(taskSegementList);
         // 前置任务由BatchSaveTaskListener完成
         log.info("generate global snapshot:{} ---> build success, last batch task segment list size:{}", taskSnapShot, taskSegementList.size());
@@ -163,7 +163,24 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
     }
 
     private boolean existWorkingSnapshot(String simpleName) {
-        TaskPo taskJob = taskHandler.getWorkingSnapShot(simpleName);
+        List<TaskPo> taskJob = taskHandler.getWorkingSnapShot(simpleName);
+        if (CollectionUtils.isEmpty(taskJob)) {
+            return false;
+        }
+        if (taskJob.size() > 2) {
+            throw new IllegalArgumentException("task:[ " + simpleName + "] exist invalid job count: " + taskJob.size() + "，please check");
+        }
+        taskJob.sort(Comparator.comparingInt(TaskPo::getMode));
+        boolean last = false;
+        for (TaskPo taskPo : taskJob) {
+            log.info("task：{} current mode: {}, status:{}", simpleName,  taskPo.getMode(), taskPo.getTaskStatus());
+            last = processWorkingSnapshot(taskPo);
+        }
+        return last;
+    }
+
+    private boolean processWorkingSnapshot(TaskPo taskJob) {
+        String simpleName = taskJob.getTaskId();
         List<TaskSegment> segmentList;
         if (!ObjectUtils.isEmpty(taskJob)) {
             // 如果还没初始化完毕，等待下次调度
@@ -176,6 +193,10 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
             if (Objects.isNull(initialSnapShot)) {
                 log.error("task id:{}, initial snapshot damage, please manually repair", taskJob.getTaskId());
                 return false;
+            }
+            if (initialSnapShot.isIncrementSync()) {
+                log.info("task:{} 开启新的一轮增量同步:{}", simpleName, DateTimeUtil.format(LocalDateTime.now()));
+                return splitAndRunTask(taskJob, initialSnapShot);
             }
             // 获取所有快照
             segmentList = taskHandler.listSegmentWithOrder(taskJob.getTaskId());
@@ -204,9 +225,9 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
         return false;
     }
 
-    private void tryFinishJob(TaskPo taskjob, TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegement) {
+    private boolean tryFinishJob(TaskPo taskjob, TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegement) {
         if (!TaskStatusEnum.FINISHED.getCode().equals(taskSegement.getStatus())) {
-            return;
+            return false;
         }
         boolean flag = judgeTaskFinish(initialSnapShot, taskSegement);
         if (flag) {
@@ -216,6 +237,7 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
         } else {
             log.info("job{} segment:{} phase task has finished, global task not finish", taskjob.getTaskId(), taskSegement.getId());
         }
+        return flag;
     }
 
     protected abstract boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegement);

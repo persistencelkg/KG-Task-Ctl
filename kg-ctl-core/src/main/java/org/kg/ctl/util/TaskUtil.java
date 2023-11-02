@@ -21,28 +21,40 @@ public class TaskUtil {
 
     private static final Integer BATCH_SIZE = 500;
 
+    public static TemporalAmount buildDurationPeriod(String key) {
+        return key.contains("T") ? buildTaskDuration(key) : buildTaskPeriod(key);
+    }
+
     public static Duration buildTaskDuration(String period) {
+        return buildTaskDuration(period, 1);
+    }
+    public static Duration buildTaskDuration(String period, int defaultValue) {
         if (ObjectUtils.isEmpty(period)) {
-            return Duration.ofMinutes(1);
+            return Duration.ofMinutes(defaultValue);
         }
         try {
             return Duration.parse(period);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
-        return Duration.ofMinutes(1);
+        return Duration.ofMinutes(defaultValue);
     }
 
+
     public static Period buildTaskPeriod(String period) {
+        return buildTaskPeriod(period, 1);
+    }
+
+    public static Period buildTaskPeriod(String period, int defaultValue) {
         if (ObjectUtils.isEmpty(period)) {
-            return Period.ofDays(1);
+            return Period.ofDays(defaultValue);
         }
         try {
             return Period.parse(period);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
-        return Period.ofDays(1);
+        return Period.ofDays(defaultValue);
     }
 
     public static List<Integer> list(int end) {

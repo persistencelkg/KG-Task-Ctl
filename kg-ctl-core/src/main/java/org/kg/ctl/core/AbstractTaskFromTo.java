@@ -131,6 +131,7 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher 
      */
     protected abstract void batchToTarget(Collection<Source> sourceData);
 
+
     public static void main(String[] args) {
         Collection cl = new ArrayList<String>() {{
             add("2");

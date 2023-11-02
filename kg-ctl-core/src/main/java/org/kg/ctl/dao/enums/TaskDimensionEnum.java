@@ -12,10 +12,10 @@ public enum TaskDimensionEnum {
     /**
      * 记录任务纬度：0：默认执行1次  1.按业务id执行任务  2.按时间段  3.时间段+索引 具体见DataSourceEnum
      */
-    DEFAULT(0),
     BIZ_ID(1),
     TIME_RANGE(2),
     TIME_RANGE_WITH_INDEX(3);
+
 
 
     private final Integer dimension;
@@ -26,11 +26,8 @@ public enum TaskDimensionEnum {
 
     public static TaskDimensionEnum getInstance(TaskPo.InitialSnapShot taskSnapShot) {
         boolean bizId = !ObjectUtils.isEmpty(taskSnapShot.getDataList());
-        boolean timeRange = !ObjectUtils.isEmpty(taskSnapShot.getStartTime())
-                            && !ObjectUtils.isEmpty(taskSnapShot.getEndTime())
-                            && !ObjectUtils.isEmpty(taskSnapShot.getSyncDimension())
-                            && !ObjectUtils.isEmpty(taskSnapShot.getSyncInterval());
-
+        boolean timeRange = !ObjectUtils.isEmpty(taskSnapShot.getSyncInterval())
+                            && !ObjectUtils.isEmpty(taskSnapShot.getMode()) ;
         boolean tableIndex = !ObjectUtils.isEmpty(taskSnapShot.getMinId()) && !ObjectUtils.isEmpty(taskSnapShot.getMaxId());
         if (bizId) {
            return BIZ_ID;

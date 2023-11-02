@@ -25,11 +25,11 @@ public class TaskHandler {
     private TaskSegmentService taskSegmentService;
 
 
-    public TaskPo getWorkingSnapShot(String taskId) {
-        return taskService.getWorkingSnapShot(taskId);
+    public List<TaskPo> getWorkingSnapShot(String taskId) {
+        return taskService.listWorkingSnapshot(taskId);
     }
 
-    public void saveSnapshot(TaskPo taskPo) {
+    public void saveOrUpdateSnapshot(TaskPo taskPo) {
         taskService.saveSnapshot(taskPo);
     }
 

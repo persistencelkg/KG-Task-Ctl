@@ -2,6 +2,7 @@ package org.kg.ctl.service;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.enums.TaskStatusEnum;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @description:
@@ -23,21 +25,24 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, TaskPo> implements 
     private TaskSegmentService taskSegmentService;
 
     @Override
-    public TaskPo getWorkingSnapShot(String taskId) {
+    public List<TaskPo> listWorkingSnapshot(String taskId) {
         LambdaQueryWrapper<TaskPo> sqlQuery = this.sqlQuery();
         sqlQuery.eq(!ObjectUtils.isEmpty(taskId), TaskPo::getTaskId, taskId)
                 .ne(TaskPo::getTaskStatus, TaskStatusEnum.FINISHED.getCode());
-        return this.getOne(sqlQuery);
+        return this.list(sqlQuery);
     }
 
     @Override
     public void saveSnapshot(TaskPo taskPo) {
-        this.save(taskPo);
+        LambdaUpdateWrapper<TaskPo> eq = this.sqlUpdate()
+                .eq(TaskPo::getTaskId, taskPo.getTaskId())
+                .eq(TaskPo::getMode, taskPo.getMode());
+        this.saveOrUpdate(taskPo, eq);
     }
 
     @Override
     public void updateTask(TaskPo taskPo) {
-        this.updateById(taskPo);
+        super.updateById(taskPo);
     }
 
 

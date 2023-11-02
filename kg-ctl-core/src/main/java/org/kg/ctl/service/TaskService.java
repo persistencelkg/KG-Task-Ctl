@@ -3,6 +3,8 @@ package org.kg.ctl.service;
 
 import org.kg.ctl.dao.TaskPo;
 
+import java.util.List;
+
 /**
  * @description:
  * @author: 李开广
@@ -10,7 +12,7 @@ import org.kg.ctl.dao.TaskPo;
  */
 public interface TaskService{
 
-    TaskPo getWorkingSnapShot(String taskId);
+    List<TaskPo> listWorkingSnapshot(String taskId);
 
     void saveSnapshot(TaskPo taskPo);
 
