@@ -5,7 +5,11 @@ import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
 import org.kg.ctl.util.TaskUtil;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -27,8 +31,8 @@ public abstract class TableIndexRangeProcessor<T> extends AbstractTaskFromTo<T> 
 
     @Override
     protected List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
-
-        List<TaskUtil.TimeSegment> timeRangeList = TaskUtil.list(initialSnapShot.getStartTime(), initialSnapShot.getEndTime(), TaskUtil.buildTaskDuration(initialSnapShot.getSyncInterval(), 1));
+        TemporalAmount duration = TaskUtil.buildTaskDuration(initialSnapShot.getSyncInterval());
+        List<TaskUtil.TimeSegment> timeRangeList = TaskUtil.list(initialSnapShot.getStartTime(), initialSnapShot.getEndTime(), duration);
         List<TaskSegment> list = new ArrayList<>();
         for (TaskUtil.TimeSegment val : timeRangeList) {
             List<TaskSegment> tempList = TaskUtil.list(taskId, initialSnapShot.getMinId(), initialSnapShot.getMaxId(), this.getBatchSize());

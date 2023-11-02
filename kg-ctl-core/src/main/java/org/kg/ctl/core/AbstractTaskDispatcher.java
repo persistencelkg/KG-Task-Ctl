@@ -25,6 +25,8 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.TemporalAmount;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -316,6 +318,23 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
      * @return 全局快照
      */
     protected TaskPo.InitialSnapShot instantiationSnapShot(TaskExecuteParam param) {
-        return TaskPo.InitialSnapShot.convertToSnapShot(param);
+        TaskPo.InitialSnapShot initialSnapShot = TaskPo.InitialSnapShot.convertToSnapShot(param);
+        LocalDateTime startTime;
+        LocalDateTime endTime;
+        if (initialSnapShot.isIncrementSync()) {
+            endTime = LocalDateTime.now();
+            // 倒数时间开始
+            if (!ObjectUtils.isEmpty(initialSnapShot.getCountDownInterval())) {
+                endTime = endTime.plus(TaskUtil.buildTaskDuration(initialSnapShot.getCountDownInterval()));
+            } else {
+                // 默认从当日0点开始同步
+                endTime = LocalDateTime.of(endTime.toLocalDate(), LocalTime.MIN);
+            }
+            startTime = endTime.plus(TaskUtil.buildDurationPeriod(initialSnapShot.getSyncPeriod()));
+            // 小于0 T-n   大于0 T+n
+            initialSnapShot.setStartTime(startTime);
+            initialSnapShot.setEndTime(endTime);
+        }
+        return initialSnapShot;
     }
 }

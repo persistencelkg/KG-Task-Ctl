@@ -32,24 +32,8 @@ public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> 
 
     @Override
     protected List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
-        LocalDateTime startTime = initialSnapShot.getStartTime();
-        LocalDateTime endTime = initialSnapShot.getEndTime();
         TemporalAmount duration = TaskUtil.buildTaskDuration(initialSnapShot.getSyncInterval());
-        if (initialSnapShot.isIncrementSync()) {
-            endTime = LocalDateTime.now();
-            // 倒数时间开始
-            if (!ObjectUtils.isEmpty(initialSnapShot.getCountDownInterval())) {
-                endTime = endTime.plus(TaskUtil.buildTaskDuration(initialSnapShot.getCountDownInterval()));
-            } else {
-            // 默认从当日0点开始同步
-                endTime = LocalDateTime.of(endTime.toLocalDate(), LocalTime.MIN);
-            }
-            startTime = endTime.plus(TaskUtil.buildDurationPeriod(initialSnapShot.getSyncPeriod()));
-            // 小于0 T-n   大于0 T+n
-            initialSnapShot.setStartTime(startTime);
-            initialSnapShot.setEndTime(endTime);
-        }
-        return TaskUtil.list(taskId, startTime, endTime, duration);
+        return TaskUtil.list(taskId, initialSnapShot.getStartTime(), initialSnapShot.getEndTime(), duration);
     }
 
     @Override
