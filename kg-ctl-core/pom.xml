@@ -10,7 +10,7 @@
 
   <artifactId>kg-ctl-core</artifactId>
   <version>1.0.0.RELEASE</version>
-<!--  <packaging>jar</packaging>-->
+  <packaging>jar</packaging>
 
   <name>kg-ctl-core</name>
 

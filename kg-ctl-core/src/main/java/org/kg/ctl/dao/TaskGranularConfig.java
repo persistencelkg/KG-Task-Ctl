@@ -1,7 +1,6 @@
 package org.kg.ctl.dao;
 
 import lombok.Data;
-import org.kg.ctl.dao.enums.TaskTimeSplitEnum;
 import org.kg.ctl.util.JsonUtil;
 
 /**
@@ -19,13 +18,6 @@ public class TaskGranularConfig {
      * 业务的高峰时段
      */
     private String bizPeekDuration = "6->21";
-
-    /**
-     * 任务切割粒度
-     */
-    private int timeSplitSize = 1;
-
-    private String timeSplitDimension = TaskTimeSplitEnum.MINUTE.getGranular();
 
     /**
      * 任务执行频次
@@ -52,9 +44,9 @@ public class TaskGranularConfig {
         TaskGranularConfig taskGranularConfig = new TaskGranularConfig();
 //        taskGranularConfig.setMixedBiz(true);
         taskGranularConfig.setRun(false);
-        taskGranularConfig.setTimeSplitDimension("mintue");
+//        taskGranularConfig.setTimeSplitDimension("mintue");
         taskGranularConfig.setBizPeekDuration("6-21");
-        taskGranularConfig.setTimeSplitSize(1);
+//        taskGranularConfig.setTimeSplitSize(1);
         System.out.println(JsonUtil.toJson(taskGranularConfig));
     }
 }

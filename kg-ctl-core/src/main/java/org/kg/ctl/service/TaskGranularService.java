@@ -1,16 +1,8 @@
 package org.kg.ctl.service;
 
-import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.TaskDynamicConfig;
-import org.kg.ctl.dao.enums.TaskTimeSplitEnum;
-import org.kg.ctl.util.TaskUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.ObjectUtils;
-
-import java.time.Duration;
-import java.time.LocalTime;
-import java.time.temporal.TemporalAmount;
 
 public interface TaskGranularService {
 

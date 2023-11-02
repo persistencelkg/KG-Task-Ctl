@@ -11,17 +11,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.enums.DataSourceEnum;
-import org.kg.ctl.dao.enums.TaskTimeSplitEnum;
+import org.kg.ctl.dao.enums.TaskDimensionEnum;
 import org.kg.ctl.util.DateTimeUtil;
+import org.kg.ctl.util.JsonUtil;
+import org.kg.ctl.util.TaskUtil;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Objects;
+import java.time.temporal.TemporalAmount;
+import java.util.*;
 
 /**
  * @author likaiguang
@@ -57,6 +58,8 @@ public class TaskPo {
 
     private LocalDateTime updateTime;
 
+    private Integer mode;
+
 
     /**
      * 静态初始快照，一旦确定 一定得所有的子任务完成才能更改
@@ -71,6 +74,8 @@ public class TaskPo {
         public static final int INCR_SYNC = 0;
         public static final int ALL_INF_SYNC = 1;
 
+
+
         private LocalDateTime startTime;
         private LocalDateTime endTime;
         private String targetTime;
@@ -80,6 +85,7 @@ public class TaskPo {
 
         private Integer minId;
         private Integer maxId;
+
         /**
          * es index为索引名
          * mysql index为表前缀
@@ -91,16 +97,66 @@ public class TaskPo {
          * 同步模式
          */
         private Integer mode;
-        /**
-         * 同步纬度，当选择时间纬度才会使用
-         * such as： year, month，day
-         */
-        private String syncDimension;
+
+
         /**
          * 同步间隔
          */
-        private Integer syncInterval;
+        private String syncInterval;
 
+        /**
+         * 同步周期：T-1D T+1D T-1H TOD
+         */
+        private String syncPeriod;
+
+        private String countDownInterval;
+
+//        private Set<String> checkedFields = new HashSet<>();
+
+        public boolean isIncrementSync() {
+            return mode == TaskPo.InitialSnapShot.INCR_SYNC;
+        }
+
+
+        public void checkValid(TaskDimensionEnum instance) {
+            if (Objects.equals(instance, TaskDimensionEnum.TIME_RANGE)) {
+                // 间隔应该不超过1天
+                try {
+                    Assert.notNull(LocalDateTime.now().plus(TaskUtil.buildTaskDuration(getSyncInterval())), "task assign sync interval not valid");
+                } catch (Exception e) {
+                    Assert.isTrue(false, "task assign sync interval not valid or not unreasonable: " +  e.getMessage());
+                }
+                Assert.isTrue(getMode() == TaskPo.InitialSnapShot.INCR_SYNC || getMode() == TaskPo.InitialSnapShot.ALL_INF_SYNC, "only support sync mode: [0,1]");
+                if (isIncrementSync()){
+                    try {
+                        Assert.notNull(getSyncPeriod(), "task assign sync period not empty");
+                        Assert.isTrue(syncPeriod.endsWith("D"), "invalid assign sync period：" + syncPeriod);
+                        LocalDateTime plus = LocalDateTime.now().plus(TaskUtil.buildTaskPeriod(getSyncPeriod()));
+                        Assert.isTrue(plus.isBefore(LocalDateTime.now()), "task assign sync period not valid, no data happen future");
+                    } catch (Exception e) {
+                        Assert.isTrue(false, "task assign sync period not valid: " +  e.getMessage());
+                    }
+                    if (!ObjectUtils.isEmpty(getCountDownInterval())) {
+                        try {
+                            LocalDateTime plus = LocalDateTime.now().plus(TaskUtil.buildTaskPeriod(getCountDownInterval()));
+                            Assert.isTrue(plus.isBefore(LocalDateTime.now()), "increment sync current before interval not valid, no data happen future");
+                        } catch (Exception e) {
+                            Assert.isTrue(false, "increment sync current before interval not valid or not unreasonable: " +  e.getMessage());
+                        }
+
+                    }
+                } else {
+                    Assert.isTrue(Objects.nonNull(getStartTime())
+                            && Objects.nonNull(getEndTime())
+                            && getStartTime().isBefore(getEndTime()), "you choose `all-in sync`, but not set a valid time range");
+                }
+            }
+        }
+
+        public TemporalAmount convertToPeriod() {
+            String canBeConvert = syncPeriod.contains("D") ? syncPeriod.replace("T", "P") : "P" + syncPeriod;
+            return TaskUtil.buildDurationPeriod(canBeConvert);
+        }
 
         public static InitialSnapShot convertToSnapShot(TaskExecuteParam param) {
             InitialSnapShotBuilder build = InitialSnapShot.builder()
@@ -113,9 +169,11 @@ public class TaskPo {
                 String tableRange = param.getTableRange();
                 String[] split = tableRange.split(JobConstants.LINE);
                 build.minId(Integer.valueOf(split[0])).maxId(Integer.valueOf(split[1]));
-                build.syncDimension(param.getSyncDimension());
-                build.syncInterval(param.getSyncInterval());
             }
+            build.syncInterval(param.getSyncInterval());
+            build.syncPeriod(param.getSyncPeriod());
+            build.mode(param.getMode());
+            build.countDownInterval(param.getBeforeNowInterval());
             if (Objects.nonNull(param.getStartTime()) && Objects.nonNull(param.getEndTime())) {
                 build.startTime(DateTimeUtil.parse(param.getStartTime())).endTime(DateTimeUtil.parse(param.getEndTime()));
             }
@@ -179,12 +237,9 @@ public class TaskPo {
 
 
     public static void main(String[] args) {
-        String str = "{\"mode\":1,\"start_time\":\"2023-08-19T23:11::11\",\"end_time\":null,\"data_list\":['2','33'],\"min_id\":null,\"max_id\":null,\"index\":\"22A\",\"ds\":null}";
-        System.out.println(str);
-
-        ArrayList<Object> objects = new ArrayList<>();
-
+        String str = "{\"sync_period\":\"T-1H\",\"start_time\":\"2023-08-19 23:11:11\",\"end_time\":null,\"data_list\":[\"2\",\"33\"],\"min_id\":null,\"max_id\":null,\"index\":\"22A\",\"ds\":null}";
+        InitialSnapShot bean = JsonUtil.toBean(str, InitialSnapShot.class);
         TaskPo.InitialSnapShot mysql = InitialSnapShot.getTask(DataSourceEnum.ES, null, "2022-01-01 00:00:00->2022-03-03 00:00:00");
-        System.out.println(mysql);
+        System.out.println(DateTimeUtil.format(LocalDateTime.now().plus(bean.convertToPeriod())));
     }
 }
