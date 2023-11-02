@@ -1,6 +1,16 @@
 ## 分布式任务故障重试脚手架
 
 
+### 引入依赖
+
+```XML
+     <dependency>
+        <groupId>io.github.persistencelkg</groupId>
+        <artifactId>kg-ctl-core</artifactId>
+        <version>1.0.0.RELEASE</version>
+     </dependency>
+```
+
 ### 应用场景
 Q1: 你是否开发过N多个框架相似，代码冗长的定时任务内嵌在业务代码中？
 A:```kg-ctl```可以减少你80%开发工作量，你仅仅只需要专注于你的同步动作那短短几行的代码逻辑
@@ -24,3 +34,7 @@ A：本脚手架充分考虑这个问题，并提供了该项服务
 
 ### 效果演示
 参考```kg-ctl-quick-start```实践
+
+
+
+# 
