@@ -27,12 +27,15 @@ import java.util.function.Function;
 @Slf4j
 public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher {
 
-    @Resource
-    private DbBatchQueryMapper<Source> dbBatchQueryMapper;
+    private final DbBatchQueryMapper<Source> dbBatchQueryMapper;
 
     @Resource
     private IdRangeMapper idRangeMapper;
 
+
+    public AbstractTaskFromTo(DbBatchQueryMapper<Source> dbBatchQueryMapper) {
+        this.dbBatchQueryMapper = dbBatchQueryMapper;
+    }
 
     /**
      * key 为待分表，value 在改分表的数据
@@ -81,7 +84,7 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher 
             if (tmp > maxId) {
                 tmp = maxId;
             }
-            List<Source> ts = dbBatchQueryMapper.selectList(fullTableName, minId, tmp, batchSize, targetTime, startTime, endTime);
+            List<Source> ts = dbBatchQueryMapper.selectListWithTableIdAndTimeRange(fullTableName, minId, tmp, batchSize, targetTime, startTime, endTime);
             batchToTarget(ts);
             try {
                 TimeUnit.MILLISECONDS.sleep(this.getSleepTime());
@@ -96,34 +99,36 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher 
     protected Function<TaskSegment, Boolean> doExecuteTask(TaskPo.InitialSnapShot initialSnapShot) {
         return (taskSegment) ->
                 splitTaskWithIdRange(initialSnapShot.getIndex(), initialSnapShot.getTargetTime(),
-                        taskSegment.getStartTime(), taskSegment.getEndTime(),
-                        taskSegment.getStartIndex(), taskSegment.getEndIndex());
+                        taskSegment.getStartTime(), taskSegment.getEndTime());
     }
 
-    protected boolean splitTaskWithIdRange(String tableName, String targetTime, LocalDateTime start, LocalDateTime end, Integer tableStart, Integer tableEnd) {
+
+
+    protected boolean splitTaskWithIdRange(String tableName, String targetTime, LocalDateTime start, LocalDateTime end) {
         // 是否是分表
-        if (Objects.isNull(tableStart) || Objects.isNull(tableEnd) || tableStart > tableEnd) {
-            return batchProcessWithIdRange(tableName, targetTime, start, end);
-        }
-        ExecutorService executorService = executorService();
-        CountDownLatch countDownLatch = new CountDownLatch(tableEnd - tableStart + 1);
-        for (int i = tableStart; i <= tableEnd; i++) {
-            int finalI = i;
-            if (!isRun()) {
-                log.info("手动暂停，time range:{}-{},table range:{}-{}, current table index:{}",
-                        DateTimeUtil.format(start), DateTimeUtil.format(end), tableStart, tableEnd, finalI);
-                return false;
-            }
-            executorService.execute(() -> {
-                batchProcessWithIdRange(tableName + finalI, targetTime, start, end);
-                countDownLatch.countDown();
-            });
-        }
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException ignored) {
-        }
-        return true;
+        return batchProcessWithIdRange(tableName, targetTime, start, end);
+//        if (Objects.isNull(tableStart) || Objects.isNull(tableEnd) || tableStart > tableEnd) {
+//
+//        }
+//        ExecutorService executorService = executorService();
+//        CountDownLatch countDownLatch = new CountDownLatch(tableEnd - tableStart + 1);
+//        for (int i = tableStart; i <= tableEnd; i++) {
+//            int finalI = i;
+//            if (!isRun()) {
+//                log.info("手动暂停，time range:{}-{},table range:{}-{}, current table index:{}",
+//                        DateTimeUtil.format(start), DateTimeUtil.format(end), tableStart, tableEnd, finalI);
+//                return false;
+//            }
+//            executorService.execute(() -> {
+//                batchProcessWithIdRange(tableName + finalI, targetTime, start, end);
+//                countDownLatch.countDown();
+//            });
+//        }
+//        try {
+//            countDownLatch.await();
+//        } catch (InterruptedException ignored) {
+//        }
+//        return true;
     }
 
     /**

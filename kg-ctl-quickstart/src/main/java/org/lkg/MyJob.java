@@ -1,6 +1,7 @@
 package org.lkg;
 
 import com.xxl.job.core.handler.annotation.XxlJob;
+import org.kg.ctl.mapper.DbBatchQueryMapper;
 import org.kg.ctl.strategy.impl.TableIndexRangeProcessor;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,9 @@ import java.util.concurrent.TimeUnit;
 public class MyJob extends TableIndexRangeProcessor<Order> {
 
 
+    public MyJob(DbBatchQueryMapper<Order> dbBatchQueryMapper) {
+        super(dbBatchQueryMapper);
+    }
 
     @XxlJob("doBatchSyncOrder")
     public void doBatchSyncOrder() {

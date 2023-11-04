@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.core.AbstractTaskFromTo;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
+import org.kg.ctl.mapper.DbBatchQueryMapper;
 import org.kg.ctl.util.TaskUtil;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -24,6 +25,10 @@ import java.util.function.Predicate;
 public abstract class BizIdProcessor<T> extends AbstractTaskFromTo<T> {
 
 
+    public BizIdProcessor(DbBatchQueryMapper<T> dbBatchQueryMapper) {
+        super(dbBatchQueryMapper);
+    }
+
     @Override
     protected void checkValid(TaskPo.InitialSnapShot taskSnapShot) {
         Collection<?> dataList = taskSnapShot.getDataList();
@@ -35,18 +40,18 @@ public abstract class BizIdProcessor<T> extends AbstractTaskFromTo<T> {
         return dataList -> dataList.getClass().isAssignableFrom(Number.class) || dataList.getClass().isAssignableFrom(CharSequence.class);
     }
 
-    @Override
-    public List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
-        // batchSize 和 线程数 互斥
-        Integer batchSize = this.getBatchSize();
-        ArrayList<?> dataList = new ArrayList<>(initialSnapShot.getDataList());
-        if (Objects.isNull(batchSize) || batchSize <= 0) {
-            Integer threadCount = this.getConcurrentThreadCount();
-            batchSize = dataList.size() / threadCount;
-        }
-        log.info("批量大小：{}", batchSize);
-        return TaskUtil.list(taskId, dataList, batchSize);
-    }
+//    @Override
+//    public List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
+//        // batchSize 和 线程数 互斥
+//        Integer batchSize = this.getBatchSize();
+//        ArrayList<?> dataList = new ArrayList<>(initialSnapShot.getDataList());
+//        if (Objects.isNull(batchSize) || batchSize <= 0) {
+//            Integer threadCount = this.getConcurrentThreadCount();
+//            batchSize = dataList.size() / threadCount;
+//        }
+//        log.info("批量大小：{}", batchSize);
+//        return TaskUtil.list(taskId, dataList, batchSize);
+//    }
 
 
     @Override
