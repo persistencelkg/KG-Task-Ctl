@@ -54,7 +54,7 @@ public abstract class TableIndexRangeProcessor<T> extends AbstractTaskFromTo<T> 
 //    }
 
     @Override
-    protected boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegement) {
-        return initialSnapShot.getEndTime().isBefore(taskSegement.getEndTime().plusNanos(1)) && initialSnapShot.getTableEnd() <= (taskSegement.getEndIndex());
+    protected boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegment) {
+        return initialSnapShot.getEndTime().isBefore(taskSegment.getEndTime().plusNanos(1)) && initialSnapShot.getTableEnd() <= (taskSegment.getEndIndex());
     }
 }

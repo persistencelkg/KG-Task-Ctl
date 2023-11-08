@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.IdRange;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
+import org.kg.ctl.util.DateTimeUtil;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
@@ -62,6 +63,10 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher 
     protected final boolean batchProcessWithIdRange(String fullTableName, String targetTime, LocalDateTime startTime, LocalDateTime endTime) {
         int batchSize = this.getBatchSize();
         IdRange idRange = dbBatchQueryMapper.queryMinIdWithTime(fullTableName, targetTime, startTime, endTime);
+        if (Objects.isNull(idRange)) {
+            log.warn("current time :{}-{} not have data", DateTimeUtil.format(startTime), DateTimeUtil.format(endTime));
+            return true;
+        }
         Long minId = idRange.getMinId();
         Long maxId = idRange.getMaxId();
         long tmp;
@@ -77,8 +82,7 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher 
             batchToTarget(ts);
             try {
                 TimeUnit.MILLISECONDS.sleep(this.getSleepTime());
-            } catch (InterruptedException ignored) {
-            }
+            } catch (InterruptedException ignored) {}
             minId = tmp + 1;
         }
         return true;

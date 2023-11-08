@@ -43,8 +43,8 @@ public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> 
     }
 
     @Override
-    protected boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegement) {
-        return initialSnapShot.getEndTime().isBefore(taskSegement.getEndTime().plusNanos(1));
+    protected boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegment) {
+        return initialSnapShot.getEndTime().isBefore(taskSegment.getEndTime().plusNanos(1));
     }
 
 

@@ -37,11 +37,11 @@ import static org.SyncDataCtlAutoConfiguration.INTERNAL_BASE_PACKAGE_JEXL;
 @Slf4j
 public class SyncDataCtlAutoConfiguration implements SmartInitializingSingleton {
 
-    protected static final String CUSTOM_BASE_PACKAGES = "${kg.job.base-packages:}";
-    protected static final String INTERNAL_BASE_PACKAGE_JEXL ="${kg.job.internal-base-package:'org.kg.ctl'," + CUSTOM_BASE_PACKAGES;
+    protected static final String CUSTOM_BASE_PACKAGES = "${kg.job.base-packages:}}";
+    protected static final String INTERNAL_BASE_PACKAGE_JEXL ="${kg.job.internal-base-package:'org.kg,'" + CUSTOM_BASE_PACKAGES;
 
-    protected static final String CUSTOM_SCAN_MAPPERS = "${kg.job.scan-mapper-packages:}";
-    protected static final String DEFAULT_SCAN_MAPPER = "${kg.job.default-scan-mapper-packages:'com.**..mapper, com.**..dao, org.**..mapper, org.**..dao'," + CUSTOM_SCAN_MAPPERS;
+    protected static final String CUSTOM_SCAN_MAPPERS = "${kg.job.scan-mapper-packages:}}";
+    protected static final String DEFAULT_SCAN_MAPPER = "${kg.job.default-scan-mapper-packages:'com.**..mapper, com.**..dao, org.**..mapper, org.**..dao,'" + CUSTOM_SCAN_MAPPERS;
 
 
     @Value(INTERNAL_BASE_PACKAGE_JEXL)
