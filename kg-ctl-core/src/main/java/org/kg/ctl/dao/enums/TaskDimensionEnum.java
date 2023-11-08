@@ -28,7 +28,7 @@ public enum TaskDimensionEnum {
         boolean bizId = !ObjectUtils.isEmpty(taskSnapShot.getDataList());
         boolean timeRange = !ObjectUtils.isEmpty(taskSnapShot.getSyncInterval())
                             && !ObjectUtils.isEmpty(taskSnapShot.getMode()) ;
-        boolean tableIndex = !ObjectUtils.isEmpty(taskSnapShot.getMinId()) && !ObjectUtils.isEmpty(taskSnapShot.getMaxId());
+        boolean tableIndex = !ObjectUtils.isEmpty(taskSnapShot.getTableStart()) && !ObjectUtils.isEmpty(taskSnapShot.getTableEnd());
         if (bizId) {
            return BIZ_ID;
         } else if (tableIndex && timeRange) {

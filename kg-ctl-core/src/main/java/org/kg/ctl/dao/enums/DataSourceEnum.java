@@ -30,8 +30,8 @@ public enum DataSourceEnum {
                 int start = Integer.parseInt(split[0]);
                 int end = Integer.parseInt(split[1]);
                 Assert.isTrue(start < end, "未正确配置mysql的分表下标:"  + index);
-                initialSnapShot.setMinId(start);
-                initialSnapShot.setMaxId(end);
+                initialSnapShot.setTableStart(start);
+                initialSnapShot.setTableEnd(end);
                 return true;
             } catch (Exception e) {
                 Assert.notNull(e, "未正确配置mysql的分表下标:" + index);

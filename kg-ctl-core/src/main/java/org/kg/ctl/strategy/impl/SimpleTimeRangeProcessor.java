@@ -3,19 +3,21 @@ package org.kg.ctl.strategy.impl;
 import org.kg.ctl.core.AbstractTaskFromTo;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
+import org.kg.ctl.dao.enums.TaskStatusEnum;
+import org.kg.ctl.mapper.DbBatchQueryMapper;
 import org.kg.ctl.util.TaskUtil;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.temporal.TemporalAmount;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -25,31 +27,14 @@ import java.util.function.Function;
  */
 public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> {
 
-    @Override
-    protected void checkValid(TaskPo.InitialSnapShot initialSnapShot) {
-        Assert.isTrue(this.getBatchSize() <= 1000, "query  size :" + this.getBatchSize() + " too more， reject request");
+
+    public SimpleTimeRangeProcessor(DbBatchQueryMapper<T> dbBatchQueryMapper) {
+        super(dbBatchQueryMapper);
     }
 
     @Override
-    protected List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
-        LocalDateTime startTime = initialSnapShot.getStartTime();
-        LocalDateTime endTime = initialSnapShot.getEndTime();
-        TemporalAmount duration = TaskUtil.buildTaskDuration(initialSnapShot.getSyncInterval());
-        if (initialSnapShot.isIncrementSync()) {
-            endTime = LocalDateTime.now();
-            // 倒数时间开始
-            if (!ObjectUtils.isEmpty(initialSnapShot.getCountDownInterval())) {
-                endTime = endTime.plus(TaskUtil.buildTaskDuration(initialSnapShot.getCountDownInterval()));
-            } else {
-            // 默认从当日0点开始同步
-                endTime = LocalDateTime.of(endTime.toLocalDate(), LocalTime.MIN);
-            }
-            startTime = endTime.plus(TaskUtil.buildDurationPeriod(initialSnapShot.getSyncPeriod()));
-            // 小于0 T-n   大于0 T+n
-            initialSnapShot.setStartTime(startTime);
-            initialSnapShot.setEndTime(endTime);
-        }
-        return TaskUtil.list(taskId, startTime, endTime, duration);
+    protected void checkValid(TaskPo.InitialSnapShot initialSnapShot) {
+        Assert.isTrue(this.getBatchSize() <= 1000, "query  size :" + this.getBatchSize() + " too more， reject request");
     }
 
     @Override
@@ -58,8 +43,8 @@ public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> 
     }
 
     @Override
-    protected boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegement) {
-        return initialSnapShot.getEndTime().isBefore(taskSegement.getEndTime().plusNanos(1));
+    protected boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegment) {
+        return initialSnapShot.getEndTime().isBefore(taskSegment.getEndTime().plusNanos(1));
     }
 
 

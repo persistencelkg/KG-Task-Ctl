@@ -30,13 +30,11 @@ public class TaskGranularConfig {
     private long sleepTime = 1000L;
 
     /**
-     * 是否是混合业务
+     * 业务场景
      */
-//    private boolean mixedBiz = true;
-
     private String bizScene;
 
-    private Integer mixThreadCount;
+//    private Integer mixThreadCount;
 
     private boolean run;
 
@@ -44,6 +42,7 @@ public class TaskGranularConfig {
         TaskGranularConfig taskGranularConfig = new TaskGranularConfig();
 //        taskGranularConfig.setMixedBiz(true);
         taskGranularConfig.setRun(false);
+        taskGranularConfig.setBizScene("IO");
 //        taskGranularConfig.setTimeSplitDimension("mintue");
         taskGranularConfig.setBizPeekDuration("6-21");
 //        taskGranularConfig.setTimeSplitSize(1);

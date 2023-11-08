@@ -22,7 +22,6 @@ public class DingDingUtil {
         }
     }
 
-
     public static void sendInfoMsg(String msg, String url, String secret) {
         log.info(msg);
         if (ObjectUtils.isEmpty(url)) {

@@ -83,8 +83,8 @@ public class TaskPo {
         private Collection<?> dataList;
         private String targetBizId;
 
-        private Integer minId;
-        private Integer maxId;
+        private Integer tableStart;
+        private Integer tableEnd;
 
         /**
          * es index为索引名
@@ -168,8 +168,9 @@ public class TaskPo {
             if (!StringUtils.isEmpty(param.getTableRange())) {
                 String tableRange = param.getTableRange();
                 String[] split = tableRange.split(JobConstants.LINE);
-                build.minId(Integer.valueOf(split[0])).maxId(Integer.valueOf(split[1]));
+                build.tableStart(Integer.valueOf(split[0])).tableEnd(Integer.valueOf(split[1]));
             }
+            build.index(param.getTablePreFix());
             build.syncInterval(param.getSyncInterval());
             build.syncPeriod(param.getSyncPeriod());
             build.mode(param.getMode());
@@ -182,7 +183,14 @@ public class TaskPo {
 
 
         public boolean isDivideTable() {
-            return Objects.isNull(getMinId()) || Objects.isNull(getMaxId());
+            return Objects.nonNull(getTableStart()) && Objects.nonNull(getTableEnd());
+        }
+
+        public Integer getTotalCount() {
+            if (isDivideTable()) {
+                return tableEnd + 1;
+            }
+            return -1;
         }
 
 

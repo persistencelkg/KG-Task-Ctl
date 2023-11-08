@@ -1,5 +1,6 @@
 package org.kg.ctl.util;
 
+import javafx.concurrent.Task;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -94,6 +95,7 @@ public class TaskUtil {
                     TaskSegment.builder()
                             .taskId(taskId)
                             .segmentId(++i)
+                            .status(TaskStatusEnum.WORKING.getCode())
                             .startIndex(start)
                             .endIndex(tempEnd)
                             .build()

@@ -3,6 +3,9 @@ package org.kg.ctl.dao.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author likaiguang
  * @date 2023/4/13 6:33 下午
@@ -13,19 +16,35 @@ public enum TaskStatusEnum {
     /**
      * 初始化状态
      */
-    DEFAULT(0),
+    INITIAL(0, "initializing"),
     /**
      * 执行中
      */
-    WORKING(1),
+    WORKING(1, "working"),
     /**
      * 其他机器执行中
      */
-    OCCUPY(2),
+    OCCUPY(2, "occupy"),
     /**
      * 已完成
      */
-    FINISHED(3)
+    FINISHED(3, "finished")
         ;
     private final Integer code;
+
+    private final String description;
+
+
+    private static final Map<Integer, TaskStatusEnum> MAP = new HashMap<>();
+
+    static {
+        TaskStatusEnum[] values = TaskStatusEnum.values();
+        for (TaskStatusEnum value : values) {
+            MAP.put(value.getCode(), value);
+        }
+    }
+
+    public static TaskStatusEnum getInstance(Integer code) {
+        return MAP.get(code);
+    }
 }

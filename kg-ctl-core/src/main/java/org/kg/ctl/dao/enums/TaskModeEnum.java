@@ -3,6 +3,9 @@ package org.kg.ctl.dao.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Description:
  * Author: 李开广
@@ -20,4 +23,16 @@ public enum TaskModeEnum {
     private final String description;
 
 
+    private static final Map<Integer, TaskModeEnum> MAP = new HashMap<>();
+
+    static {
+        TaskModeEnum[] values = TaskModeEnum.values();
+        for (TaskModeEnum value : values) {
+            MAP.put(value.getMode(), value);
+        }
+    }
+
+    public static TaskModeEnum getInstance(Integer mode) {
+        return MAP.get(mode);
+    }
 }
