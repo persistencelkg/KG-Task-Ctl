@@ -170,6 +170,7 @@ public class TaskPo {
                 String[] split = tableRange.split(JobConstants.LINE);
                 build.tableStart(Integer.valueOf(split[0])).tableEnd(Integer.valueOf(split[1]));
             }
+            build.index(param.getTablePreFix());
             build.syncInterval(param.getSyncInterval());
             build.syncPeriod(param.getSyncPeriod());
             build.mode(param.getMode());

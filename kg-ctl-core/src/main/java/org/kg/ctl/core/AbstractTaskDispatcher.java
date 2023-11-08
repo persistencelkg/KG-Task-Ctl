@@ -179,8 +179,8 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
                     for (int i = start; i <= tempEnd; i++) {
                         int finalI = i;
                         executorService.execute(() -> {
-                            taskSnapShot.setIndex(taskSnapShot.getIndex() + finalI);
-                            splitAndRunTask(taskJob.getTaskId(), taskSnapShot);
+                            String currentTableName = taskSnapShot.getIndex() + finalI;
+                            splitAndRunTask(taskJob.getTaskId(), taskSnapShot, currentTableName);
                             countDownLatch.countDown();
                         });
                     }
@@ -198,7 +198,7 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
             }
         }
         // 直接执行
-        return splitAndRunTask(taskJob.getTaskId(), taskSnapShot);
+        return splitAndRunTask(taskJob.getTaskId(), taskSnapShot, null);
     }
 
     private boolean existWorkingSnapshot(String simpleName) {
@@ -246,7 +246,7 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
         segmentList = taskHandler.listSegmentWithOrder(taskJob.getTaskId());
         if (!ObjectUtils.isEmpty(segmentList)) {
             dynamicExecuteTask(segmentList, initialSnapShot);
-            return tryFinishJob(taskJob, initialSnapShot, segmentList.get(segmentList.size() -1));
+            return tryFinishJob(taskJob, initialSnapShot, segmentList.get(segmentList.size() - 1));
             //获取属于自己操作部分
 //            List<TaskSegment> belongOwn = TaskUtil.list(segmentList, getIndex(), getTotalCount());
 //            if (!ObjectUtils.isEmpty(belongOwn)) {
@@ -286,7 +286,7 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
 
 
     /// TODO 下一次怎么开始
-    private boolean splitAndRunTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
+    private boolean splitAndRunTask(String taskId, TaskPo.InitialSnapShot initialSnapShot, String tableId) {
         TemporalAmount duration = TaskUtil.buildTaskDuration(initialSnapShot.getSyncInterval());
         ArrayList<TaskSegment> objects = new ArrayList<>();
         LocalDateTime tempStart = initialSnapShot.getStartTime();
@@ -298,6 +298,7 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
             if (tempStart.plusNanos(1).isAfter(initialSnapShot.getEndTime())) {
                 break;
             }
+
             TaskSegment build = TaskSegment.builder()
                     .taskId(taskId)
                     .segmentId(++i)
@@ -305,7 +306,9 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
                     .startTime(tempStart)
                     .endTime(tempEnd)
                     .build();
-
+            if (Objects.nonNull(tableId)) {
+                 build.setSnapshotValue(tableId);
+            }
             objects.add(build);
             if (objects.size() % getConcurrentThreadCount() == 0) {
                 getTaskHandler().saveSegment(objects);
@@ -356,50 +359,50 @@ public abstract class AbstractTaskDispatcher implements TaskMachine, TaskControl
 
     }
 
-    private void doTask(TaskPo.InitialSnapShot initialSnapShot, List<TaskSegment> workingTaskSegment) {
-        int concurrentThreadNum = Objects.nonNull(this.getConcurrentThreadCount()) ? this.getConcurrentThreadCount() : getDefaultThreadCount();
-        // n个 任务 分配给 m个线程
-        int batchCount = workingTaskSegment.size() / concurrentThreadNum;
-        log.info("concurrentThreadNum size:{}, each thread execute task size:{}", concurrentThreadNum, batchCount);
-        if (workingTaskSegment.size() % concurrentThreadNum != 0) {
-            batchCount++;
-        }
-        int threadCount = concurrentThreadNum;
-        ExecutorService executorService = executorService();
-        AtomicInteger count = new AtomicInteger();
-        for (int i = 0; i < batchCount; i++) {
-            if (i == batchCount - 1) {
-                threadCount = workingTaskSegment.size() % concurrentThreadNum;
-            }
-            CountDownLatch countDownLatch = new CountDownLatch(threadCount);
-
-            for (int j = 0; j < threadCount; j++) {
-                TaskSegment taskSegment = workingTaskSegment.get(count.getAndIncrement());
-                // 停止具体的子任务
-                if (!isRun()) {
-                    dingErrorLog(MessageFormat.format("快照：{0} 手动停止", taskSegment));
-                    return;
-                }
-                try {
-                    executorService.execute(() -> {
-                        executeTask(taskSegment, doExecuteTask(initialSnapShot));
-                        countDownLatch.countDown();
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    dingErrorLog(MessageFormat.format("快照：{0} 执行出现异常：{1}", taskSegment, e));
-                    countDownLatch.countDown();
-                }
-
-            }
-            try {
-                countDownLatch.await();
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
-        }
-
-    }
+//    private void doTask(TaskPo.InitialSnapShot initialSnapShot, List<TaskSegment> workingTaskSegment) {
+//        int concurrentThreadNum = Objects.nonNull(this.getConcurrentThreadCount()) ? this.getConcurrentThreadCount() : getDefaultThreadCount();
+//        // n个 任务 分配给 m个线程
+//        int batchCount = workingTaskSegment.size() / concurrentThreadNum;
+//        log.info("concurrentThreadNum size:{}, each thread execute task size:{}", concurrentThreadNum, batchCount);
+//        if (workingTaskSegment.size() % concurrentThreadNum != 0) {
+//            batchCount++;
+//        }
+//        int threadCount = concurrentThreadNum;
+//        ExecutorService executorService = executorService();
+//        AtomicInteger count = new AtomicInteger();
+//        for (int i = 0; i < batchCount; i++) {
+//            if (i == batchCount - 1) {
+//                threadCount = workingTaskSegment.size() % concurrentThreadNum;
+//            }
+//            CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+//
+//            for (int j = 0; j < threadCount; j++) {
+//                TaskSegment taskSegment = workingTaskSegment.get(count.getAndIncrement());
+//                // 停止具体的子任务
+//                if (!isRun()) {
+//                    dingErrorLog(MessageFormat.format("快照：{0} 手动停止", taskSegment));
+//                    return;
+//                }
+//                try {
+//                    executorService.execute(() -> {
+//                        executeTask(taskSegment, doExecuteTask(initialSnapShot));
+//                        countDownLatch.countDown();
+//                    });
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    dingErrorLog(MessageFormat.format("快照：{0} 执行出现异常：{1}", taskSegment, e));
+//                    countDownLatch.countDown();
+//                }
+//
+//            }
+//            try {
+//                countDownLatch.await();
+//            } catch (InterruptedException ex) {
+//                ex.printStackTrace();
+//            }
+//        }
+//
+//    }
 
     protected abstract Function<TaskSegment, Boolean> doExecuteTask(TaskPo.InitialSnapShot initialSnapShot);
 

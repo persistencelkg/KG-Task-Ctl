@@ -15,16 +15,15 @@ import java.util.List;
  * @author: 李开广
  * @date: 2023/5/25 11:12 AM
  */
-@Repository
 public interface DbBatchQueryMapper<Source> {
 
     String SELECT_LIST_WITH_BIZ_ID = "<script>SELECT * FROM ${tableId} WHERE ${targetBizId} in <foreach item='item' collection='ids' open='(' separator=',' close=')'> #{item} </foreach></script>";
     String SELECT_LIST_WITH_TABLE_ID_AND_TIME_RANGE = "SELECT * FROM ${tableId} WHERE id >= #{startId} AND id <= #{maxId} AND ${targetTime} between #{startTime} and #{endTime} LIMIT #{batchSize}";
     String SELECT_LIST_WITH_TIME_RANGE = "SELECT * FROM ${tableId} WHERE ${targetTime} between #{startTime} and #{endTime}";
-//
-//    @Select("SELECT MIN(id) as minId, MAX(id) as maxId  FROM ${tableId} WHERE ${targetTime} between #{startTime} and #{endTime}")
-//    IdRange queryMinIdWithTime(@Param("tableId") String tableId, @Param("targetTime") String targetTime,
-//                               @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Select("SELECT MIN(id) as minId, MAX(id) as maxId  FROM ${tableId} WHERE ${targetTime} between #{startTime} and #{endTime}")
+    IdRange queryMinIdWithTime(@Param("tableId") String tableId, @Param("targetTime") String targetTime,
+                               @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
 
     List<Source> selectListWithBizIdList(@Param("tableId")String tableId, @Param("targetBizId")String targetBizId, @Param("ids") Collection<?> collection);

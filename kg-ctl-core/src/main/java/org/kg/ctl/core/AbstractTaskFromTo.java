@@ -3,21 +3,13 @@ package org.kg.ctl.core;
 import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.IdRange;
-import org.kg.ctl.dao.TaskPo;
-import org.kg.ctl.dao.TaskSegment;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
-import org.kg.ctl.mapper.IdRangeMapper;
-import org.kg.ctl.util.DateTimeUtil;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * @description: 基础批量查询处理
@@ -28,9 +20,6 @@ import java.util.function.Function;
 public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher {
 
     private final DbBatchQueryMapper<Source> dbBatchQueryMapper;
-
-    @Resource
-    private IdRangeMapper idRangeMapper;
 
 
     public AbstractTaskFromTo(DbBatchQueryMapper<Source> dbBatchQueryMapper) {
@@ -72,7 +61,7 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher 
 
     protected final boolean batchProcessWithIdRange(String fullTableName, String targetTime, LocalDateTime startTime, LocalDateTime endTime) {
         int batchSize = this.getBatchSize();
-        IdRange idRange = idRangeMapper.queryMinIdWithTime(fullTableName, targetTime, startTime, endTime);
+        IdRange idRange = dbBatchQueryMapper.queryMinIdWithTime(fullTableName, targetTime, startTime, endTime);
         Long minId = idRange.getMinId();
         Long maxId = idRange.getMaxId();
         long tmp;
@@ -93,42 +82,6 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher 
             minId = tmp + 1;
         }
         return true;
-    }
-
-    @Override
-    protected Function<TaskSegment, Boolean> doExecuteTask(TaskPo.InitialSnapShot initialSnapShot) {
-        return (taskSegment) ->
-                splitTaskWithIdRange(initialSnapShot.getIndex(), initialSnapShot.getTargetTime(),
-                        taskSegment.getStartTime(), taskSegment.getEndTime());
-    }
-
-
-
-    protected boolean splitTaskWithIdRange(String tableName, String targetTime, LocalDateTime start, LocalDateTime end) {
-        // 是否是分表
-        return batchProcessWithIdRange(tableName, targetTime, start, end);
-//        if (Objects.isNull(tableStart) || Objects.isNull(tableEnd) || tableStart > tableEnd) {
-//
-//        }
-//        ExecutorService executorService = executorService();
-//        CountDownLatch countDownLatch = new CountDownLatch(tableEnd - tableStart + 1);
-//        for (int i = tableStart; i <= tableEnd; i++) {
-//            int finalI = i;
-//            if (!isRun()) {
-//                log.info("手动暂停，time range:{}-{},table range:{}-{}, current table index:{}",
-//                        DateTimeUtil.format(start), DateTimeUtil.format(end), tableStart, tableEnd, finalI);
-//                return false;
-//            }
-//            executorService.execute(() -> {
-//                batchProcessWithIdRange(tableName + finalI, targetTime, start, end);
-//                countDownLatch.countDown();
-//            });
-//        }
-//        try {
-//            countDownLatch.await();
-//        } catch (InterruptedException ignored) {
-//        }
-//        return true;
     }
 
     /**

@@ -11,6 +11,7 @@ import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * @description:
@@ -31,8 +32,12 @@ public abstract class TableIndexRangeProcessor<T> extends AbstractTaskFromTo<T> 
         Assert.isTrue(this.getBatchSize() <= 1000, "query  size :" + this.getBatchSize() + " too more， reject request");
     }
 
+    @Override
+    protected Function<TaskSegment, Boolean> doExecuteTask(TaskPo.InitialSnapShot initialSnapShot) {
+        return (task) -> batchProcessWithIdRange(task.getSnapshotValue(), initialSnapShot.getTargetTime(), task.getStartTime(), task.getEndTime());
+    }
 
-//    @Override
+    //    @Override
 //    protected List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot, Integer Id) {
 //        TemporalAmount duration = TaskUtil.buildTaskDuration(initialSnapShot.getSyncInterval());
 //        List<TaskUtil.TimeSegment> timeRangeList = TaskUtil.list(initialSnapShot.getStartTime(), initialSnapShot.getEndTime(), duration);
