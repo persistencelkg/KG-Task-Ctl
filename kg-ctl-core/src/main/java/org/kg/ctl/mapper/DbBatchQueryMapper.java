@@ -11,9 +11,9 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * @description: 数据库批量查询基础能力
- * @author: 李开广
- * @date: 2023/5/25 11:12 AM
+ * Description: 数据库批量查询基础能力
+ * Author: 李开广
+ * Date: 2023/5/25 11:12 AM
  */
 public interface DbBatchQueryMapper<Source> {
 

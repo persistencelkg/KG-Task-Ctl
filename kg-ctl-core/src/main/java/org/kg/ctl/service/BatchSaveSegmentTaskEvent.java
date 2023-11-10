@@ -3,9 +3,9 @@ package org.kg.ctl.service;
 import org.springframework.context.ApplicationEvent;
 
 /**
- * @description: 批量生产快照任务事件，每到500条触发一次更新
- * @author: 李开广
- * @date: 2023/6/1 8:35 PM
+ * Description: 批量生产快照任务事件，每到500条触发一次更新
+ * Author: 李开广
+ * Date: 2023/6/1 8:35 PM
  */
 public class BatchSaveSegmentTaskEvent extends ApplicationEvent {
 

@@ -25,8 +25,8 @@ import java.time.temporal.TemporalAmount;
 import java.util.*;
 
 /**
- * @author likaiguang
- * @date 2023/4/11 5:22 下午
+ * Author 李开广
+ * Date 2023/4/11 5:22 下午
  */
 @Data
 @Builder
@@ -59,6 +59,11 @@ public class TaskPo {
     private LocalDateTime updateTime;
 
     private Integer mode;
+
+
+    public boolean isIncrementSync() {
+        return mode == TaskPo.InitialSnapShot.INCR_SYNC;
+    }
 
 
     /**
@@ -186,7 +191,7 @@ public class TaskPo {
             return Objects.nonNull(getTableStart()) && Objects.nonNull(getTableEnd());
         }
 
-        public Integer getTotalCount() {
+        public Integer getDivideTableBatchSize() {
             if (isDivideTable()) {
                 return tableEnd + 1;
             }

@@ -7,16 +7,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author likaiguang
- * @date 2023/4/13 6:33 下午
+ * Author 李开广
+ * Date 2023/4/13 6:33 下午
  */
 @AllArgsConstructor
 @Getter
 public enum TaskStatusEnum {
-    /**
-     * 初始化状态
-     */
-    INITIAL(0, "initializing"),
     /**
      * 执行中
      */

@@ -17,9 +17,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * @description: 业务id处理器
- * @author: 李开广
- * @date: 2023/5/23 4:07 PM
+ * Description: 业务id处理器
+ * Author: 李开广
+ * Date: 2023/5/23 4:07 PM
  */
 @Slf4j
 public abstract class BizIdProcessor<T> extends AbstractTaskFromTo<T> {
@@ -39,24 +39,19 @@ public abstract class BizIdProcessor<T> extends AbstractTaskFromTo<T> {
     private Predicate<Collection<?>> predicateValid() {
         return dataList -> dataList.getClass().isAssignableFrom(Number.class) || dataList.getClass().isAssignableFrom(CharSequence.class);
     }
-
-//    @Override
-//    public List<TaskSegment> splitTask(String taskId, TaskPo.InitialSnapShot initialSnapShot) {
-//        // batchSize 和 线程数 互斥
-//        Integer batchSize = this.getBatchSize();
-//        ArrayList<?> dataList = new ArrayList<>(initialSnapShot.getDataList());
-//        if (Objects.isNull(batchSize) || batchSize <= 0) {
-//            Integer threadCount = this.getConcurrentThreadCount();
-//            batchSize = dataList.size() / threadCount;
-//        }
-//        log.info("批量大小：{}", batchSize);
-//        return TaskUtil.list(taskId, dataList, batchSize);
-//    }
-
+    @Override
+    protected Function<TaskSegment, Boolean> buildExecuteFunction(TaskPo.InitialSnapShot initialSnapShot) {
+        return (taskSegment) -> batchProcessWithBizIdList(initialSnapShot.getIndex(), initialSnapShot.getTargetBizId(), initialSnapShot.isDivideTable(), initialSnapShot.getDataList());
+    }
 
     @Override
-    protected Function<TaskSegment, Boolean> doExecuteTask(TaskPo.InitialSnapShot initialSnapShot) {
-        return (taskSegment) -> batchProcessWithBizIdList(initialSnapShot.getIndex(), initialSnapShot.getTargetBizId(), initialSnapShot.isDivideTable(), initialSnapShot.getDataList());
+    protected void processTaskByScene(TaskPo taskJob, TaskPo.InitialSnapShot taskSnapShot) {
+
+    }
+
+    @Override
+    protected TaskSegment splitAndRunTask(Integer taskId, TaskPo.InitialSnapShot initialSnapShot, String tableId) {
+        return super.splitAndRunTask(taskId, initialSnapShot, tableId);
     }
 
     @Override

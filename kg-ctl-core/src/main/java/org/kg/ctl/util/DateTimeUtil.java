@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 /**
- * @author liuyy
+ * Author liuyy
  */
 public class DateTimeUtil {
 

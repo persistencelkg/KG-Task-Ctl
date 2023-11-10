@@ -3,6 +3,7 @@ package org.kg.ctl.service;
 import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.TaskDynamicConfig;
 import org.kg.ctl.strategy.ThreadCountStrategy;
+import org.kg.ctl.util.SpringUtil;
 import org.springframework.util.ObjectUtils;
 
 import java.time.LocalTime;
@@ -11,10 +12,13 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static org.kg.ctl.config.CtlTaskThreadTaskConfiguration.IO_EXECUTOR;
+import static org.kg.ctl.config.CtlTaskThreadTaskConfiguration.MIX_EXECUTOR;
+
 /**
- * @description:
- * @author: 李开广
- * @date: 2023/8/23 5:20 PM
+ * Description:
+ * Author: 李开广
+ * Date: 2023/8/23 5:20 PM
  */
 public interface TaskControlService extends TaskGranularService {
 
@@ -23,7 +27,14 @@ public interface TaskControlService extends TaskGranularService {
      *
      * @return 自定义线程池
      */
-    ExecutorService executorService();
+    default ExecutorService executorService() {
+        String bizScene = TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getBizScene();
+        if (Objects.equals(ThreadCountStrategy.IO, ThreadCountStrategy.getStrategy(bizScene))) {
+            return SpringUtil.getBean(MIX_EXECUTOR, ExecutorService.class);
+        } else {
+            return SpringUtil.getBean(IO_EXECUTOR, ExecutorService.class);
+        }
+    }
 
     /**
      * 获取执行过程中同时执行的子任务数
@@ -36,10 +47,6 @@ public interface TaskControlService extends TaskGranularService {
         return getThreadCount();
     }
 
-    default Integer getDefaultThreadCount() {
-//        return getDynamicConcurrentThreadNum(isMixedBiz());
-        return null;
-    }
 
     default Integer customThreadCount() {
         return null;

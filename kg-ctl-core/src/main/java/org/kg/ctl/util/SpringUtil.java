@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 
 /**
- * @description:
- * @author: 李开广
- * @date: 2023/6/1 8:43 PM
+ * Description:
+ * Author: 李开广
+ * Date: 2023/6/1 8:43 PM
  */
 @Component
 public class SpringUtil implements ApplicationContextAware {
@@ -26,5 +26,9 @@ public class SpringUtil implements ApplicationContextAware {
 
     public static void publishEvent(ApplicationEvent applicationEvent) {
         APPLICATION_CONTEXT.publishEvent(applicationEvent);
+    }
+
+    public static <T> T getBean(String name, Class<T> type) {
+        return APPLICATION_CONTEXT.getBean(name, type);
     }
 }

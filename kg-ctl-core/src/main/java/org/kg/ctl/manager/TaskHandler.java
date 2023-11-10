@@ -12,9 +12,9 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * @description: 业务聚合
- * @author: 李开广
- * @date: 2023/5/23 3:58 PM
+ * Description: 业务聚合
+ * Author: 李开广
+ * Date: 2023/5/23 3:58 PM
  */
 @Service
 public class TaskHandler {
@@ -25,7 +25,7 @@ public class TaskHandler {
     private TaskSegmentService taskSegmentService;
 
 
-    public List<TaskPo> getWorkingSnapShot(String taskId) {
+    public List<TaskPo> listAllModeTask(String taskId) {
         return taskService.listWorkingSnapshot(taskId);
     }
 
@@ -46,7 +46,11 @@ public class TaskHandler {
     }
 
 
-    public List<TaskSegment> listSegmentWithOrder(String taskId) {
+    public TaskSegment listLastSegment(Integer taskId) {
+        return taskSegmentService.listLastSegment(taskId);
+    }
+
+    public List<TaskSegment> listWorkingSegment(Integer taskId) {
         List<TaskSegment> taskSegments = taskSegmentService.listSegmentWithTaskId(taskId);
         if (ObjectUtils.isEmpty(taskSegments)) {
             return null;

@@ -7,9 +7,9 @@ import org.kg.ctl.util.JsonUtil;
  * TODO n多个job 如何隔离控制，是否应该基于表呢？
  * 基于任务的量级、频次控制
  *
- * @description: 任务的粒度控制
- * @author: 李开广
- * @date: 2023/5/23 2:31 PM
+ * Description: 任务的粒度控制
+ * Author: 李开广
+ * Date: 2023/5/23 2:31 PM
  */
 @Data
 public class TaskGranularConfig {

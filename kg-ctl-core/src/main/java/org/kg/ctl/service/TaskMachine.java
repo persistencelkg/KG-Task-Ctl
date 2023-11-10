@@ -3,7 +3,7 @@ package org.kg.ctl.service;
 import com.xxl.job.core.context.XxlJobHelper;
 
 /**
- * @author likaiguang
+ * Author 李开广
  */
 public interface TaskMachine {
 

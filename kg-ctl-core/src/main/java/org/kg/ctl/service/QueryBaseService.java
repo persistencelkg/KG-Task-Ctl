@@ -5,9 +5,9 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 
 /**
- * @description:  基础业务层:统一封装lambad表达式
- * @author: likaiguang
- * @date： 2022/2/10 7:21 下午
+ * Description:  基础业务层:统一封装lambad表达式
+ * Author: 李开广
+ * Date： 2022/2/10 7:21 下午
  **/
 public interface QueryBaseService<T> {
     /**

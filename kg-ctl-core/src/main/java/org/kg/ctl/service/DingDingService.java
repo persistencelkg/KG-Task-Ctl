@@ -7,8 +7,8 @@ import org.kg.ctl.util.DingDingUtil;
 import java.text.MessageFormat;
 
 /**
- * @author likaiguang
- * @date 2023/4/21 3:40 下午
+ * Author 李开广
+ * Date 2023/4/21 3:40 下午
  */
 public interface DingDingService {
 
