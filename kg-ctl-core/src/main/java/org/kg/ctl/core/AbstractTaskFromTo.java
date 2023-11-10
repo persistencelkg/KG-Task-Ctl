@@ -3,22 +3,27 @@ package org.kg.ctl.core;
 import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.IdRange;
+import org.kg.ctl.dao.TaskPo;
+import org.kg.ctl.dao.TaskSegment;
+import org.kg.ctl.dao.enums.TaskStatusEnum;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
 import org.kg.ctl.util.DateTimeUtil;
+import org.kg.ctl.util.TaskUtil;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @description: 基础批量查询处理
- * @author: 李开广
- * @date: 2023/5/25 3:23 PM
+ * Description: 基础批量查询处理
+ * Author: 李开广
+ * Date: 2023/5/25 3:23 PM
  */
 @Slf4j
-public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher {
+public abstract class AbstractTaskFromTo<Source> extends AbstractTaskContext {
 
     private final DbBatchQueryMapper<Source> dbBatchQueryMapper;
 
@@ -93,6 +98,47 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskDispatcher 
      */
     protected abstract void batchToTarget(Collection<Source> sourceData);
 
+
+    @Override
+    protected TaskSegment splitAndRunTask(Integer taskId, TaskPo.InitialSnapShot initialSnapShot, String tableId) {
+        TemporalAmount duration = TaskUtil.buildTaskDuration(initialSnapShot.getSyncInterval());
+        ArrayList<TaskSegment> objects = new ArrayList<>();
+        LocalDateTime tempStart = initialSnapShot.getStartTime();
+        LocalDateTime tempEnd;
+        TaskSegment lastSegment = null;
+        int i = 0;
+        while (isRun()) {
+            tempEnd = tempStart.plus(duration);
+            if (tempStart.plusNanos(1).isAfter(initialSnapShot.getEndTime())) {
+                break;
+            }
+
+            TaskSegment build = TaskSegment.builder()
+                    .taskId(taskId)
+                    .segmentId(++i)
+                    .status(TaskStatusEnum.WORKING.getCode())
+                    .startTime(tempStart)
+                    .endTime(tempEnd)
+                    .build();
+            if (Objects.nonNull(tableId)) {
+                build.setSnapshotValue(tableId);
+            }
+            objects.add(build);
+            if (objects.size() % getConcurrentThreadCount() == 0) {
+                getTaskHandler().saveSegment(objects);
+                dynamicExecuteTask(objects, initialSnapShot);
+                lastSegment = objects.get(objects.size() - 1);
+                objects.clear();
+            }
+            tempStart = tempEnd;
+        }
+        if (objects.size() > 0) {
+            getTaskHandler().saveSegment(objects);
+            dynamicExecuteTask(objects, initialSnapShot);
+            lastSegment = objects.get(objects.size() - 1);
+        }
+        return lastSegment;
+    }
 
     public static void main(String[] args) {
         Collection cl = new ArrayList<String>() {{

@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 
 /**
- * @author likaiguang
- * @date 2023/4/12 10:36 上午
+ * Author 李开广
+ * Date 2023/4/12 10:36 上午
  */
 @Component
 public class SpringContextService implements ApplicationContextAware {

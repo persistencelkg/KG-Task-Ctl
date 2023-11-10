@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 
 /**
  * sharding-jdbc没有实现这个LocalDateTime的转换，这里自定义转换类
- * @author: qsy
- * @date: 2023/2/16 16:10
+ * Author: qsy
+ * Date: 2023/2/16 16:10
  */
 public class LocalDateTimeTypeHandler extends BaseTypeHandler<LocalDateTime> {
     @Override

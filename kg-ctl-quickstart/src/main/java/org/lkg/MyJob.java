@@ -1,10 +1,12 @@
 package org.lkg;
 
 import com.xxl.job.core.handler.annotation.XxlJob;
+import org.aspectj.weaver.ast.Or;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
 import org.kg.ctl.strategy.impl.TableIndexRangeProcessor;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -48,12 +50,5 @@ public class MyJob extends TableIndexRangeProcessor<Order> {
         // syncToES();
         // 注意你无需开发多线程，因为改操作已经内置，sourceData的数据取决你的配置大小，你只需要考虑怎么同步到你的目标服务上，
         // 例如tidbService.bathInsert(sourceData);
-    }
-
-    @Override
-    public ExecutorService executorService() {
-        // 你的线程池
-        return new ThreadPoolExecutor(8, 20, 60000,
-                TimeUnit.SECONDS, new LinkedBlockingDeque<>(300), new ThreadPoolExecutor.CallerRunsPolicy());
     }
 }

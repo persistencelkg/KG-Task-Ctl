@@ -11,9 +11,9 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * @description:
- * @author: 李开广
- * @date: 2023/6/1 8:48 PM
+ * Description:
+ * Author: 李开广
+ * Date: 2023/6/1 8:48 PM
  */
 @Component
 @Slf4j

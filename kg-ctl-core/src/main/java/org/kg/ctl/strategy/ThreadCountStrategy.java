@@ -39,7 +39,7 @@ public enum ThreadCountStrategy {
 
     ;
 
-    private static final int INTERNAL_PROCESSORS = Runtime.getRuntime().availableProcessors();
+    public static final int INTERNAL_PROCESSORS = Runtime.getRuntime().availableProcessors();
     private static final Map<Integer, ThreadCountStrategy> MAP = new HashMap<Integer, ThreadCountStrategy>();
 
     static {

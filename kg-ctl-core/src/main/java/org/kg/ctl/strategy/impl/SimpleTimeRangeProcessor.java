@@ -3,27 +3,25 @@ package org.kg.ctl.strategy.impl;
 import org.kg.ctl.core.AbstractTaskFromTo;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
-import org.kg.ctl.dao.enums.TaskStatusEnum;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
-import org.kg.ctl.util.TaskUtil;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.util.Assert;
 
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.TemporalAmount;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
 /**
- * @description:
- * @author: 李开广
- * @date: 2023/8/23 2:14 PM
+ * Description:
+ * Author: 李开广
+ * Date: 2023/8/23 2:14 PM
  */
 public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> {
 
@@ -37,14 +35,46 @@ public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> 
         Assert.isTrue(this.getBatchSize() <= 1000, "query  size :" + this.getBatchSize() + " too more， reject request");
     }
 
+
     @Override
-    protected Function<TaskSegment, Boolean> doExecuteTask(TaskPo.InitialSnapShot initialSnapShot) {
+    protected void dynamicExecuteTask(List<TaskSegment> workingTaskSegment, TaskPo.InitialSnapShot initialSnapShot) {
+        int n = getConcurrentThreadCount();
+        ExecutorService executorService = executorService();
+        CountDownLatch countDownLatch = new CountDownLatch(n);
+        for (int i = 0; i < n; i++) {
+            TaskSegment taskSegment = workingTaskSegment.get(i);
+            try {
+                executorService.execute(() -> {
+                    executeTask(taskSegment, buildExecuteFunction(initialSnapShot));
+                    countDownLatch.countDown();
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                dingErrorLog(MessageFormat.format("快照：{0} 执行出现异常：{1}", taskSegment, e));
+            }
+        }
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+
+    }
+
+    @Override
+    protected Function<TaskSegment, Boolean> buildExecuteFunction(TaskPo.InitialSnapShot initialSnapShot) {
         return (task) -> batchProcessWithIdRange(initialSnapShot.getIndex(), initialSnapShot.getTargetTime(), task.getStartTime(), task.getEndTime());
     }
+
 
     @Override
     protected boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegment) {
         return initialSnapShot.getEndTime().isBefore(taskSegment.getEndTime().plusNanos(1));
+    }
+
+    @Override
+    protected void processTaskByScene(TaskPo taskJob, TaskPo.InitialSnapShot taskSnapShot) {
+        splitAndRunTask(taskJob.getId(), taskSnapShot, null);
     }
 
 

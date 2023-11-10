@@ -81,7 +81,7 @@ public class TaskUtil {
     }
 
 
-    public static List<TaskSegment> list(String taskId, Integer start, Integer end, Integer spiltCount) {
+    public static List<TaskSegment> list(Integer taskId, Integer start, Integer end, Integer spiltCount) {
         Integer tempEnd = 0;
         ArrayList<TaskSegment> taskSegements = new ArrayList<>();
         int i = 0;
@@ -143,7 +143,7 @@ public class TaskUtil {
         return list.subList(from, from + batchSize);
     }
 
-    public static List<TaskSegment> list(String taskId, List<?> dataList, Integer batchSize) {
+    public static List<TaskSegment> list(Integer taskId, List<?> dataList, Integer batchSize) {
         int totalCount = dataList.size() / batchSize;
         if (totalCount == 0) {
             ArrayList<TaskSegment> taskSegements = new ArrayList<>();
@@ -181,7 +181,7 @@ public class TaskUtil {
     }
 
 
-    public static List<TaskSegment> list(String taskId, LocalDateTime start, LocalDateTime end, TemporalAmount duration) {
+    public static List<TaskSegment> list(Integer taskId, LocalDateTime start, LocalDateTime end, TemporalAmount duration) {
         ArrayList<TaskSegment> objects = new ArrayList<>();
         LocalDateTime tempStart = start;
         LocalDateTime tempEnd = start;

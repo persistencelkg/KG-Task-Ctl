@@ -6,9 +6,9 @@ import org.springframework.util.StringUtils;
 import java.util.Collection;
 
 /**
- * @description:
- * @author: 李开广
- * @date: 2023/8/23 9:20 PM
+ * Description:
+ * Author: 李开广
+ * Date: 2023/8/23 9:20 PM
  */
 @Data
 public class TaskExecuteParam {

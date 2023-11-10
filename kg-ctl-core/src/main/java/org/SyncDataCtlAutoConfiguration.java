@@ -22,9 +22,9 @@ import static org.SyncDataCtlAutoConfiguration.DEFAULT_SCAN_MAPPER;
 import static org.SyncDataCtlAutoConfiguration.INTERNAL_BASE_PACKAGE_JEXL;
 
 /**
- * @description: 脚手架的自动装配
- * @author: 李开广
- * @date: 2023/5/24 2:38 PM
+ * Description: 脚手架的自动装配
+ * Author: 李开广
+ * Date: 2023/5/24 2:38 PM
  */
 @Configuration
 @ConditionalOnWebApplication

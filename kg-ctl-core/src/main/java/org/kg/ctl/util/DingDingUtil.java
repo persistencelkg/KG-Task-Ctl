@@ -6,8 +6,8 @@ import org.springframework.util.ObjectUtils;
 import java.text.MessageFormat;
 
 /**
- * @author likaiguang
- * @date 2023/2/22 4:29 下午
+ * Author 李开广
+ * Date 2023/2/22 4:29 下午
  */
 @Slf4j
 public class DingDingUtil {

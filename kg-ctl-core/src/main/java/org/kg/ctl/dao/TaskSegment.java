@@ -20,7 +20,8 @@ public class TaskSegment {
     @TableId(type = IdType.AUTO)
     private Integer id;
 
-    private String taskId;
+    private Integer taskId;
+
 
     /**
      * 当前批次的id，暂无使用
