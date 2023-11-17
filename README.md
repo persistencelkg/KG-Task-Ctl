@@ -7,7 +7,7 @@
      <dependency>
         <groupId>io.github.persistencelkg</groupId>
         <artifactId>kg-ctl-core</artifactId>
-        <version>1.0.0.RELEASE</version>
+        <version>1.0.2.RELEASE</version>
      </dependency>
 ```
 
