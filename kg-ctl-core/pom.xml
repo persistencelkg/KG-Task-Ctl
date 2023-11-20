@@ -5,11 +5,11 @@
   <parent>
     <groupId>io.github.persistencelkg</groupId>
     <artifactId>kg-task-ctl</artifactId>
-    <version>1.0.0.RELEASE</version>
+    <version>1.0.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>kg-ctl-core</artifactId>
-  <version>1.0.0.RELEASE</version>
+  <version>1.0.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>kg-ctl-core</name>
@@ -109,106 +109,7 @@
 
   </dependencies>
 
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
 
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.7</version>
-        <extensions>true</extensions>
-        <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>2.2.1</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar-no-fork</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.9.1</version>
-        <configuration>
-          <javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
-          <!--禁用注释检查-->
-          <additionalJOptions>
-            <additionalJOption>-Xdoclint:none</additionalJOption>
-          </additionalJOptions>
-        </configuration>
-
-        <executions>
-          <execution>
-            <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <version>1.5</version>
-        <executions>
-          <execution>
-            <id>sign-artifacts</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>sign</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-
-  </build>
-
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>actable</distribution>
-    </license>
-  </licenses>
-
-  <developers>
-    <developer>
-      <name>li kaiguang</name>
-      <email>18634185909@163.com</email>
-      <organization>One day without coding, one feels repulsive</organization>
-    </developer>
-  </developers>
-
-  <scm>
-    <tag>master</tag>
-    <url>https://github.com/persistencelkg/task-ctl.git</url>
-    <connection>https://github.com/persistencelkg/task-ctl.git</connection>
-    <developerConnection>https://github.com/persistencelkg/task-ctl.git</developerConnection>
-  </scm>
 
 </project>

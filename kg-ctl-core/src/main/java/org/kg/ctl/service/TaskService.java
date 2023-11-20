@@ -13,9 +13,9 @@ import java.util.List;
  * Author: 李开广
  * Date: 2023/5/23 3:22 PM
  */
-public interface TaskService{
+public interface TaskService {
 
-    List<TaskPo> listWorkingSnapshot(String taskId);
+    List<TaskPo> listWorkingSnapshot(String taskId, Integer mode);
 
     void saveSnapshot(TaskPo taskPo);
 

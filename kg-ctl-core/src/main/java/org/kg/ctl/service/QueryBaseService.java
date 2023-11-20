@@ -20,6 +20,8 @@ public interface QueryBaseService<T> {
     }
 
 
+
+
     /**
      * lambada Update
      *

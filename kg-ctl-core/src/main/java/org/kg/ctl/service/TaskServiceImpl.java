@@ -26,9 +26,10 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, TaskPo> implements 
     private TaskSegmentService taskSegmentService;
 
     @Override
-    public List<TaskPo> listWorkingSnapshot(String taskId) {
+    public List<TaskPo> listWorkingSnapshot(String taskId, Integer mode) {
         LambdaQueryWrapper<TaskPo> sqlQuery = this.sqlQuery();
         sqlQuery.eq(!ObjectUtils.isEmpty(taskId), TaskPo::getTaskId, taskId);
+        sqlQuery.eq(!ObjectUtils.isEmpty(mode), TaskPo::getMode, mode);
         return this.list(sqlQuery);
     }
 
