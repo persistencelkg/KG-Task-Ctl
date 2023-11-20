@@ -25,8 +25,8 @@ public class TaskHandler {
     private TaskSegmentService taskSegmentService;
 
 
-    public List<TaskPo> listAllModeTask(String taskId) {
-        return taskService.listWorkingSnapshot(taskId);
+    public List<TaskPo> listAllModeTask(String taskId, Integer mode) {
+        return taskService.listWorkingSnapshot(taskId ,mode);
     }
 
     public void saveOrUpdateSnapshot(TaskPo taskPo) {
@@ -61,7 +61,7 @@ public class TaskHandler {
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteTaskWithSegment(String taskId) {
-        taskService.deleteTask(taskId);
+//        taskService.deleteTask(taskId);
         taskSegmentService.deleteTaskSegments(taskId);
     }
 }

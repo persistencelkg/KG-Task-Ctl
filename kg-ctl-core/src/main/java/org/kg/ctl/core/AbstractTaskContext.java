@@ -64,6 +64,9 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
     private String env;
 
     private final ThreadLocal<TaskPo> globalTask = ThreadLocal.withInitial(TaskPo::new);
+
+    protected final Map<String, TaskPo.InitialSnapShot> currentInitialSnapShot = new ConcurrentHashMap<>();
+
     private final Map<String, Boolean> workingMode = new ConcurrentHashMap<>();
 
     protected final Map<String, TaskSegment> currentSceneLastSegemntMap = new ConcurrentHashMap<>();
@@ -71,26 +74,41 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
 
     protected void runTask() {
         try {
-            if (isRun()) {
+            if (!isRun()) {
                 log.warn("ctl task:{} current has stop，please reopen", getTaskId());
                 return;
             }
-            TaskPo.InitialSnapShot initialSnapShot = initJob();
-            for (; ; ) {
-                boolean job = getJob(initialSnapShot.getMode());
-                if (!job) {
-                    break;
-                }
+            TaskPo.InitialSnapShot currentInitialSnapShot = getCurrentInitialSnapShot();
+            if (existWorkingJob(currentInitialSnapShot.getMode())) {
+                log.warn("ctl task:{} has working", getTaskId());
+                return;
             }
-            createTask(initialSnapShot);
+            //  getJob
+            List<TaskPo> getJob = getJob(currentInitialSnapShot.getMode());
+            if (!CollectionUtils.isEmpty(getJob)) {
+                // self adapt all_in sync and increment sync run at once
+                continueRunTask(getTaskId(), getJob);
+            } else {
+                TaskPo taskPo = initJob(currentInitialSnapShot);
+                createTask(taskPo, currentInitialSnapShot);
+            }
         } catch (Exception e) {
             log.error("ctl task error ---->", e);
         }
     }
 
-    private void createTask(TaskPo.InitialSnapShot initialSnapShot) {
+    private boolean existWorkingJob(Integer mode) {
+        // give other not working mode an opportunity to create task
+        String key = getTaskKey(mode);
+        if (workingMode.containsKey(key)) {
+            return workingMode.get(key);
+        }
+        return false;
+    }
+
+    private void createTask( TaskPo taskPo, TaskPo.InitialSnapShot initialSnapShot) {
         log.info("ctl task:{} start ---->", getTaskId());
-        TaskPo taskPo = globalTask.get();
+//        TaskPo taskPo = globalTask.get();
         boolean finish = splitAndRunTask(taskPo, initialSnapShot);
         if (finish) {
             dingErrorLog(MessageFormat.format("ctl task:{0} finished ---->", getTaskId()));
@@ -100,27 +118,20 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
     }
 
 
-    private boolean getJob(Integer mode) {
+    private List<TaskPo> getJob(Integer mode) {
         String simpleName = getTaskId();
-        // give other not working mode an opportunity to create task
-        String key = simpleName + UNIFIED + mode;
-        if (workingMode.containsKey(key)) {
-            return workingMode.get(key);
-        }
-        return doGetJob(simpleName);
+        return doGetJob(simpleName, mode);
     }
 
-    private boolean doGetJob(String simpleName) {
-        List<TaskPo> taskJob = taskHandler.listAllModeTask(simpleName);
+    private List<TaskPo> doGetJob(String simpleName, Integer mode) {
+        List<TaskPo> taskJob = taskHandler.listAllModeTask(simpleName, mode);
         if (CollectionUtils.isEmpty(taskJob)) {
-            return false;
+            return null;
         }
         if (taskJob.size() > 2) {
             throw new IllegalArgumentException("task:[ " + simpleName + "] exist invalid job count: " + taskJob.size() + "，please check");
         }
-        // adapt all_in sync and increment sync run at once
-        continueRunTask(simpleName, taskJob);
-        return true;
+        return taskJob;
     }
 
     private void continueRunTask(String taskName, List<TaskPo> taskJob) {
@@ -157,10 +168,16 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
         return false;
     }
 
-    private TaskPo.InitialSnapShot initJob() {
+
+    private TaskPo.InitialSnapShot getCurrentInitialSnapShot() {
         String param = getParam();
         TaskExecuteParam bean = JsonUtil.toBean(param, TaskExecuteParam.class);
-        TaskPo.InitialSnapShot taskSnapShot = instantiationSnapShot(bean);
+        TaskPo.InitialSnapShot initialSnapShot = instantiationSnapShot(bean);
+//        currentInitialSnapShot.put(getTaskKey(initialSnapShot.getMode()), initialSnapShot);
+        return initialSnapShot;
+    }
+
+    private TaskPo initJob(TaskPo.InitialSnapShot taskSnapShot) {
         // 预校验
         TaskDimensionEnum instance = validateJob(taskSnapShot);
         TaskPo taskJob = new TaskPo();
@@ -171,9 +188,9 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
         taskJob.setTaskDimension(instance.getDimension());
         // 保存全局快照
         taskHandler.saveOrUpdateSnapshot(taskJob);
-        globalTask.set(taskJob);
+//        globalTask.set(taskJob);
         log.info("init global snapshot:{} ---> build success, start split segments and run task", taskSnapShot);
-        return taskSnapShot;
+        return taskJob;
     }
 
     @Override
@@ -222,6 +239,10 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
         List<TaskSegment> segmentList = taskHandler.listWorkingSegment(taskJob.getId());
         if (ObjectUtils.isEmpty(segmentList)) {
             TaskSegment taskSegment = taskHandler.listLastSegment(taskJob.getId());
+            if (ObjectUtils.isEmpty(taskSegment)) {
+                // 无数据，重新按内容划分
+                return splitAndRunTask(taskJob, initialSnapShot);
+            }
             currentSceneLastSegemntMap.put(getTaskKey(taskJob), taskSegment);
             // 查询最后一个任务，实际切分不是一次性切分，而是预切分
             boolean tryFinishJob = tryFinishJob(taskJob, initialSnapShot);
@@ -232,7 +253,7 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
         }
         // 当场快照执行完毕
         dynamicExecuteTask(segmentList, initialSnapShot);
-        boolean res  = tryFinishJob(taskJob, initialSnapShot);
+        boolean res = tryFinishJob(taskJob, initialSnapShot);
         while (!res) {
             initialSnapShot.setStartTime(segmentList.get(segmentList.size() - 1).getEndTime());
             res = !splitAndRunTask(taskJob, initialSnapShot);
@@ -277,7 +298,7 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
         }
         boolean flag = judgeTaskFinish(initialSnapShot, taskSegment);
         if (flag) {
-            dingErrorLog(MessageFormat.format("job:{0}，global task has finished", taskJob.getTaskId()));
+            dingErrorLog(MessageFormat.format("job:{0}，global task has finished ", taskJob));
             taskJob.setTaskStatus(TaskStatusEnum.FINISHED.getCode());
             taskHandler.updateTask(taskJob);
         } else {
@@ -317,7 +338,11 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
     }
 
     protected String getTaskKey(TaskPo taskJob) {
-        return taskJob.getTaskId() + UNIFIED + taskJob.getMode();
+        return getTaskKey(taskJob.getMode());
+    }
+
+    protected String getTaskKey(Integer mode) {
+        return getTaskId() + UNIFIED + mode;
     }
 
 }

@@ -4,10 +4,10 @@
     <parent>
         <groupId>io.github.persistencelkg</groupId>
         <artifactId>kg-task-ctl</artifactId>
-        <version>1.0.2.RELEASE</version>
+        <version>1.0.3-SNAPSHOT</version>
     </parent>
     <artifactId>kg-ctl-quickstart</artifactId>
-    <version>1.0.2.RELEASE</version>
+    <version>1.0.3-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -17,7 +17,7 @@
         <dependency>
             <groupId>io.github.persistencelkg</groupId>
             <artifactId>kg-ctl-core</artifactId>
-            <version>1.0.2.RELEASE</version>
+            <version>1.0.3-SNAPSHOT</version>
         </dependency>
 
     </dependencies>

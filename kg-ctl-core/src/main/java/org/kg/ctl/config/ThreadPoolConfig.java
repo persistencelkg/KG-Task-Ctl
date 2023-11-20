@@ -65,7 +65,7 @@ public class ThreadPoolConfig {
     }
 
     @Bean
-    public CustomExecutorServiceFactory selfExecutorService(MdcTaskDecorator mdcTaskDecorator) {
+    public CustomExecutorServiceFactory customExecutorServiceFactory(MdcTaskDecorator mdcTaskDecorator) {
         return new CustomExecutorServiceFactory() {
             @Override
             public ExecutorService create(String prefix, int maxThread, int coreSize, int queueSize, RejectedExecutionHandler rejectedExecutionHandler) {
@@ -78,6 +78,8 @@ public class ThreadPoolConfig {
                 executorService.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
                 executorService.setWaitForTasksToCompleteOnShutdown(true);
                 executorService.setTaskDecorator(mdcTaskDecorator);
+                // 初始化
+                executorService.afterPropertiesSet();
                 return executorService.getThreadPoolExecutor();
             }
 

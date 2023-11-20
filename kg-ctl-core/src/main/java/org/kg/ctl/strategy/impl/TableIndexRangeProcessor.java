@@ -95,6 +95,7 @@ public abstract class TableIndexRangeProcessor<T> extends AbstractTaskFromTo<T> 
                 countDownLatch.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                countDownLatch.countDown();
             }
             start = tempEnd + 1;
         }
