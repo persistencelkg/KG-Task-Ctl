@@ -21,7 +21,7 @@ public interface TaskService {
 
     void updateTask(TaskPo taskPo);
 
-    void deleteTask(String taskId);
+    void deleteTask(Integer taskId);
 
 
 }

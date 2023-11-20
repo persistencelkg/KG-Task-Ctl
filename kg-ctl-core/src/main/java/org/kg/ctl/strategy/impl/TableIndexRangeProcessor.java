@@ -6,6 +6,7 @@ import org.kg.ctl.dao.TaskSegment;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
 import org.springframework.util.Assert;
 
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -44,13 +45,18 @@ public abstract class TableIndexRangeProcessor<T> extends AbstractTaskFromTo<T> 
     }
 
     @Override
-    protected void dynamicExecuteTask(List<TaskSegment> workingTaskSegment, TaskPo.InitialSnapShot initialSnapShot) {
+    protected boolean dynamicExecuteTask(List<TaskSegment> workingTaskSegment, TaskPo.InitialSnapShot initialSnapShot) {
         // 分表以表纬度作为线程， 未分表以线程数为主
         int n = getConcurrentThreadCount();
         for (int i = 0; i < n; i++) {
             TaskSegment taskSegment = workingTaskSegment.get(i);
             executeTask(taskSegment, buildExecuteFunction(initialSnapShot));
+            if (!isRun()) {
+                dingErrorLog(MessageFormat.format("快照:{0}已经停止，当前执行快照：{1}", taskSegment.getTaskId(), taskSegment));
+                return false;
+            }
         }
+        return true;
     }
 
     public static int powerOfTwoExponent(int number) {

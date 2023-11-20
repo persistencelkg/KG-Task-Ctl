@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.TemporalAmount;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Description: 基础批量查询处理
@@ -112,7 +113,6 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskContext {
             if (tempStart.plusNanos(1).isAfter(initialSnapShot.getEndTime())) {
                 break;
             }
-
             TaskSegment build = TaskSegment.builder()
                     .taskId(taskId)
                     .segmentId(++i)
@@ -125,18 +125,30 @@ public abstract class AbstractTaskFromTo<Source> extends AbstractTaskContext {
             }
             objects.add(build);
             if (objects.size() % getConcurrentThreadCount() == 0) {
-                getTaskHandler().saveSegment(objects);
-                dynamicExecuteTask(objects, initialSnapShot);
-                lastSegment = objects.get(objects.size() - 1);
-                objects.clear();
+                lastSegment = batchSaveAndExecuteTask(objects, initialSnapShot);
             }
             tempStart = tempEnd;
         }
         if (objects.size() > 0) {
-            getTaskHandler().saveSegment(objects);
-            dynamicExecuteTask(objects, initialSnapShot);
-            lastSegment = objects.get(objects.size() - 1);
+            lastSegment = batchSaveAndExecuteTask(objects, initialSnapShot);
         }
+        return lastSegment;
+    }
+
+    private TaskSegment batchSaveAndExecuteTask(List<TaskSegment> objects, TaskPo.InitialSnapShot initialSnapShot) {
+        getTaskHandler().saveSegment(objects);
+        return batchExecute(objects, initialSnapShot);
+    }
+
+    @Override
+    protected TaskSegment batchExecute(List<TaskSegment> objects, TaskPo.InitialSnapShot initialSnapShot) {
+        boolean res = dynamicExecuteTask(objects, initialSnapShot);
+        if (res) {
+            getTaskHandler().batchDeleteTaskWithSegment(objects.stream().map(TaskSegment::getTaskId).collect(Collectors.toList()));
+        }
+        updateWorkingMode(initialSnapShot.getMode(), res);
+        TaskSegment lastSegment = objects.get(objects.size() - 1);
+        objects.clear();
         return lastSegment;
     }
 
