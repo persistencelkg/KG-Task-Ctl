@@ -22,13 +22,23 @@ public interface TaskGranularService {
         return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getBizPeekDuration();
     }
 
+
     /**
      * 批量任务大小
      *
-     * @return 默认500
+     * @return 默认300
      */
     default Integer getBatchSize() {
         return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getBatchSize();
+    }
+
+
+    /**
+     * 最大任务查询量
+     * @return
+     */
+    default Integer getMaxBatchSize() {
+        return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getMaxBatchSize();
     }
 
     /**
@@ -39,12 +49,15 @@ public interface TaskGranularService {
     default long getSleepTime() {
         return TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getSleepTime();
     }
+    
+    default int getDynamicDbQueryNumber() {
+        return isPeek() ? getBatchSize() : getMaxBatchSize();
+    }
 
-
-    default boolean isBizPeek() {
+    default boolean isPeek() {
         String bizPeek = getBizPeek();
         if (ObjectUtils.isEmpty(bizPeek)) {
-            return false;
+            return true;
         }
         String[] split = bizPeek.split(JobConstants.LINE);
         Assert.isTrue(split.length == 2, "invalid job biz peek config:" + bizPeek);
@@ -52,6 +65,9 @@ public interface TaskGranularService {
         int end = Integer.parseInt(split[1]);
         Assert.isTrue(start < end, "invalid job biz peek config:" + bizPeek);
         int hour = LocalTime.now().getHour();
-        return start <= hour && hour <= end;
+        if (start <= hour && hour <= end) {
+            return true;
+        }
+        return false;
     }
 }

@@ -1,7 +1,6 @@
 package org.kg.ctl.dao;
 
 import lombok.Data;
-import org.kg.ctl.util.JsonUtil;
 
 /**
  * TODO n多个job 如何隔离控制，是否应该基于表呢？
@@ -14,38 +13,34 @@ import org.kg.ctl.util.JsonUtil;
 @Data
 public class TaskGranularConfig {
 
-    /**
-     * 业务的高峰时段
-     */
     private String bizPeekDuration = "6->21";
+    /**
+     * 低峰最大查询数据量
+     */
+    private int maxBatchSize = 500;
 
     /**
-     * 任务执行频次
+     * 高峰最大查询数据量
      */
-    private int batchSize = 500;
+    private int batchSize = 300;
 
     /**
      * 每次执行后的休眠时间 毫秒
      */
     private long sleepTime = 1000L;
 
+    private int submitThreadCount = 2;
+
     /**
      * 业务场景
      */
     private String bizScene;
 
-//    private Integer mixThreadCount;
+    private String url;
+    private String secret;
 
+    /**
+     * 控制开关
+     */
     private boolean run;
-
-    public static void main(String[] args) {
-        TaskGranularConfig taskGranularConfig = new TaskGranularConfig();
-//        taskGranularConfig.setMixedBiz(true);
-        taskGranularConfig.setRun(false);
-        taskGranularConfig.setBizScene("IO");
-//        taskGranularConfig.setTimeSplitDimension("mintue");
-        taskGranularConfig.setBizPeekDuration("6-21");
-//        taskGranularConfig.setTimeSplitSize(1);
-        System.out.println(JsonUtil.toJson(taskGranularConfig));
-    }
 }

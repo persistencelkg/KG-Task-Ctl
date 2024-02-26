@@ -1,26 +1,21 @@
 package org.kg.ctl.dao;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.kg.ctl.util.DateTimeUtil;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("task_segment")
 public class TaskSegment {
 
-    @TableId(type = IdType.AUTO)
-    private Integer id;
-
-    private Integer taskId;
+    private String mode;
 
 
     /**
@@ -54,4 +49,11 @@ public class TaskSegment {
 
     private LocalDateTime updateTime;
 
+
+    public String getTimeRange() {
+        if (Objects.nonNull(startTime) && Objects.nonNull(endTime)) {
+            return DateTimeUtil.format(startTime) + "-->" + DateTimeUtil.format(endTime);
+        }
+        return "no time";
+    }
 }

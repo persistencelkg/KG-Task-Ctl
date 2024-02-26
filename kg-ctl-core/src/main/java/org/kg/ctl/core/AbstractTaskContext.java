@@ -1,61 +1,60 @@
 package org.kg.ctl.core;
 
 
-import com.baomidou.mybatisplus.core.toolkit.StringPool;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.dao.TaskExecuteParam;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
-import org.kg.ctl.dao.enums.TaskDimensionEnum;
 import org.kg.ctl.dao.enums.TaskModeEnum;
-import org.kg.ctl.dao.enums.TaskStatusEnum;
-import org.kg.ctl.manager.TaskHandler;
 import org.kg.ctl.service.DingDingService;
+import org.kg.ctl.service.TableMetaData;
 import org.kg.ctl.service.TaskControlService;
 import org.kg.ctl.service.TaskMachine;
+import org.kg.ctl.strategy.TaskPostProcessor;
+import org.kg.ctl.util.DateTimeUtil;
 import org.kg.ctl.util.JsonUtil;
+import org.kg.ctl.util.PerfUtil;
 import org.kg.ctl.util.TaskUtil;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
-import javax.annotation.Resource;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+
+import static org.kg.ctl.config.JobConstants.QUERY_SIZE_PER_SEC;
 
 
 /**
  * TODO: 1.如何服务扩缩容，影响分片任务
  *       2.无xxl-job例如使用了Elastic-Job的分片规则如何确定？
- *         1)单机【无需考虑】 2)集群【可以基于Nacos拉取服务列表来自定义默认的调度策略】
- *       3.分布式调度任务时，不要存储IP，应该以固定InstanceName代替，即只考虑参与任务的机器个数，而不应比较具体的数据， 一旦指定分布式配置，需要给出一个开关进行线程适配。
+ *       3.分布式调度任务时，不要存储IP，应该以固定InstanceName
  * kg task ctl life circle
  * <p>
- * prepareJob->getJob->doGetJob->getProcessingTask-------------
- * initJob -> parseParam -> adaptMode                         |
- * validateJob -> commonCheck -> customCheck                 |
- * createTask -> doCreateTask【splitAndRunTask】             |
- * executeTask;                               <-------------
+ * prepareJob
+ * initJob -> parseParam -> adaptMode
+ * validateJob -> commonCheck -> customCheck
+ * createTask -> doCreateTask【splitAndRunTask】
+ * executeTask;
  * finishJob
  * <p>
  * Author 李开广
  * Date 2023/4/11 7:33 下午
  */
 @Slf4j
-public abstract class AbstractTaskContext implements TaskMachine, TaskControlService, DingDingService {
+public abstract class AbstractTaskContext implements TableMetaData, TaskMachine, TaskControlService, DingDingService {
 
     protected static final String UNIFIED = "#";
-
-    @Resource
-    @Getter
-    private TaskHandler taskHandler;
 
     @Value("${spring.application.name:''}")
     private String applicationName;
@@ -63,100 +62,70 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
     @Value("${spring.profiles.active:local}")
     private String env;
 
-    private final ThreadLocal<TaskPo> globalTask = ThreadLocal.withInitial(TaskPo::new);
+    private static final String MODE_KEY = "mode";
 
-    protected final Map<String, TaskPo.InitialSnapShot> currentInitialSnapShot = new ConcurrentHashMap<>();
 
-    private final Map<String, Boolean> workingMode = new ConcurrentHashMap<>();
-
-    protected final Map<String, TaskSegment> currentSceneLastSegemntMap = new ConcurrentHashMap<>();
-
+    private final ConcurrentHashMap<String, Long> jobGlobalCountMap = new ConcurrentHashMap<>(8);
 
     protected void runTask() {
+        if (!isRun()) {
+            dingInfoLog(MessageFormat.format("ctl task:{0} current has stop，please reopen", getTaskId()));
+            return;
+        }
         TaskPo.InitialSnapShot currentInitialSnapShot = getCurrentInitialSnapShot();
+        MDC.put(MODE_KEY, currentInitialSnapShot.getMode());
         try {
-            if (!isRun()) {
-                log.warn("ctl task:{} current has stop，please reopen", getTaskId());
-                return;
+            initJob(currentInitialSnapShot);
+            createTask(currentInitialSnapShot);
+            if (isRun()) {
+                putContext(currentInitialSnapShot, 0L);
             }
-            for (; ; ) {
-                // current working
-                if (existWorkingJob(currentInitialSnapShot.getMode())) {
-                    log.warn("ctl task:{} has working", getTaskId());
-                    TimeUnit.SECONDS.sleep(15);
-                    continue;
-                }
-                //  getJob
-                List<TaskPo> getJob = getJob(currentInitialSnapShot.getMode());
-                if (CollectionUtils.isEmpty(getJob)) {
-                    break;
-                }
-                // self adapt all_in sync and increment sync run at once
-                continueRunTask(getTaskId(), getJob);
-            }
-            TaskPo taskPo = initJob(currentInitialSnapShot);
-            createTask(taskPo, currentInitialSnapShot);
         } catch (Exception e) {
             log.error("ctl task error ---->", e);
-            updateWorkingMode(currentInitialSnapShot.getMode(), false);
+            dingErrorLog("ctl task exec error");
+        } finally {
+            MDC.remove(MODE_KEY);
         }
     }
 
-    private boolean existWorkingJob(Integer mode) {
-        // give other not working mode an opportunity to create task
-        String key = getTaskKey(mode);
-        if (workingMode.containsKey(key)) {
-            return workingMode.get(key);
-        }
-        return false;
+    protected String getMode() {
+        return MDC.get(MODE_KEY);
     }
 
-    private void createTask(TaskPo taskPo, TaskPo.InitialSnapShot initialSnapShot) {
-        log.info("ctl task:{} start ---->", getTaskId());
-//        TaskPo taskPo = globalTask.get();
-        boolean finish = splitAndRunTask(taskPo, initialSnapShot);
-        if (!finish) {
-            dingErrorLog(MessageFormat.format("ctl task:{0} current cpu time has used up, but not finish job！！！ ---->", getTaskId()));
+    private void putContext(TaskPo.InitialSnapShot initialSnapShot, long value) {
+        jobGlobalCountMap.putIfAbsent(getTaskKey(initialSnapShot.getMode()), value);
+    }
+
+    private void createTask(TaskPo.InitialSnapShot initialSnapShot) {
+        dingInfoLog(getGlobalInfo(initialSnapShot, "开始执行"));
+        splitAndRunTask(initialSnapShot);
+        if (isRun()) {
+            dingInfoLog(getGlobalInfo(initialSnapShot, "执行完成，恭喜💐💐💐"));
         }
     }
 
+    private void initGlobalCount(TaskPo.InitialSnapShot initialSnapShot) {
+        String syncInterval = initialSnapShot.getSyncInterval();
+        TemporalAmount temporalAmount = TaskUtil.buildDurationPeriod(syncInterval);
+        LocalDateTime startTime = initialSnapShot.getStartTime();
+        LocalDateTime endTime = initialSnapShot.getEndTime();
 
-    private List<TaskPo> getJob(Integer mode) {
-
-        String simpleName = getTaskId();
-        return doGetJob(simpleName, mode);
+        int count = 0;
+        LocalDateTime tempStart = startTime;
+        LocalDateTime tempEnd = LocalDateTime.of(startTime.toLocalDate(), LocalTime.MAX);
+        long daysBetween = ChronoUnit.DAYS.between(startTime, endTime);
+        while (tempStart.isBefore(tempEnd)) {
+            count++;
+            tempStart = tempStart.plus(temporalAmount);
+        }
+        putContext(initialSnapShot, count * daysBetween);
     }
 
-    private List<TaskPo> doGetJob(String simpleName, Integer mode) {
-        List<TaskPo> taskJob = taskHandler.listAllModeTask(simpleName, mode);
-        if (CollectionUtils.isEmpty(taskJob)) {
-            return null;
-        }
-        if (taskJob.size() > 2) {
-            throw new IllegalArgumentException("task:[ " + simpleName + "] exist invalid job count: " + taskJob.size() + "，please check");
-        }
-        return taskJob;
+    protected int compute(TaskPo.InitialSnapShot initialSnapShot, int i) {
+        Long total = jobGlobalCountMap.get(getTaskKey(initialSnapShot.getMode()));
+        return (int) (((double) i / total) * 100);
     }
 
-    private void continueRunTask(String taskName, List<TaskPo> taskJob) {
-        // increment sync run first
-        taskJob.sort(Comparator.comparingInt(TaskPo::getMode));
-        boolean isWorking;
-        for (TaskPo taskPo : taskJob) {
-            TaskPo.InitialSnapShot initialSnapShot = JsonUtil.toBean(taskPo.getInitialSnapShot(), TaskPo.InitialSnapShot.class);
-            if (Objects.isNull(initialSnapShot)) {
-                throw new IllegalStateException(MessageFormat.format("task id:{0}, initial snapshot damage, please manually repair", taskPo.getTaskId()));
-            }
-            if (taskPo.isIncrementSync() && Objects.equals(TaskStatusEnum.FINISHED.getCode(), taskPo.getTaskStatus())) {
-                initIncrementSync(initialSnapShot);
-            }
-            workingMode.put(getTaskKey(taskPo), true);
-            log.info("task：{} continue execute task, current mode: {}, status:{}", taskName, TaskModeEnum.getInstance(taskPo.getMode()).getDescription(),
-                    TaskStatusEnum.getInstance(taskPo.getTaskStatus()).getDescription());
-            isWorking = processWorkingSnapshot(taskPo, initialSnapShot);
-            workingMode.put(getTaskKey(taskPo), isWorking);
-        }
-    }
 
     public boolean isNegative(Object num) {
         if (Objects.isNull(num)) {
@@ -174,144 +143,165 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
 
     private TaskPo.InitialSnapShot getCurrentInitialSnapShot() {
         String param = getParam();
+        Assert.isTrue(!ObjectUtils.isEmpty(param), "not set job param， reject execute");
         TaskExecuteParam bean = JsonUtil.toBean(param, TaskExecuteParam.class);
-        TaskPo.InitialSnapShot initialSnapShot = instantiationSnapShot(bean);
-//        currentInitialSnapShot.put(getTaskKey(initialSnapShot.getMode()), initialSnapShot);
-        return initialSnapShot;
+        return instantiationSnapShot(bean);
     }
 
-    private TaskPo initJob(TaskPo.InitialSnapShot taskSnapShot) {
+    private void initJob(TaskPo.InitialSnapShot taskSnapShot) {
         // 预校验
-        TaskDimensionEnum instance = validateJob(taskSnapShot);
-        TaskPo taskJob = new TaskPo();
-        taskJob.setTaskId(getTaskId());
-        taskJob.setTaskStatus(TaskStatusEnum.WORKING.getCode());
-        taskJob.setInitialSnapShot(JsonUtil.toJson(taskSnapShot));
-        taskJob.setMode(taskSnapShot.getMode());
-        taskJob.setTaskDimension(instance.getDimension());
-        // 保存全局快照
-        taskHandler.saveOrUpdateSnapshot(taskJob);
-//        globalTask.set(taskJob);
-        log.info("init global snapshot:{} ---> build success, start split segments and run task", taskSnapShot);
-        return taskJob;
+        initGlobalCount(taskSnapShot);
+        log.info("init global snapshot:{}, prepare exec:{} ---> start split segments and run task", taskSnapShot, jobGlobalCountMap);
     }
 
     @Override
     public String getEnv() {
-        return MessageFormat.format("【env:{0}】|【task:{1}】", env, getTaskId());
+        return MessageFormat.format("【env:{0}】|【{1}】\n", env, getTaskId());
+    }
+
+    public boolean isOnline() {
+        return Objects.equals(env, "online") || Objects.equals(env, "prepub");
     }
 
 
-    protected abstract void checkValid(TaskPo.InitialSnapShot taskSnapShot);
+    protected void checkValid(TaskPo.InitialSnapShot taskSnapShot) {
+        if (!taskSnapShot.isProcessUniqueData()) {
+            boolean timeValid = Objects.nonNull(taskSnapShot.getStartTime()) && Objects.nonNull(taskSnapShot.getEndTime());
+            Assert.isTrue(timeValid, "start_time and end_time is must param");
+            Assert.isTrue(taskSnapShot.getStartTime().isBefore(taskSnapShot.getEndTime()), "start_time must less than end_time");
+        }
+        if (taskSnapShot.isDivideTable()) {
+            Assert.isTrue(taskSnapShot.isValidDivideTable() > 0, "your choose table id with time range， but not support valid id range");
+        }
+        if (idIncrement()) {
+            Assert.isTrue(this.getDynamicDbQueryNumber() <= QUERY_SIZE_PER_SEC, "query  size :" + this.getDynamicDbQueryNumber() + " too more， reject request");
+        }
+    }
 
 
-    private TaskDimensionEnum validateJob(TaskPo.InitialSnapShot taskSnapShot) {
+    private void validateJob(TaskPo.InitialSnapShot taskSnapShot) {
         // config check
-        Assert.isTrue(isNegative(this.getSleepTime()), "each split task must have valid milliseconds sleep time");
-        Assert.isTrue(isNegative(this.getBatchSize()) && isNegative(this.getConcurrentThreadCount()), "each split task must have valid batch size");
+        Assert.isTrue(isNegative(this.getSleepTime()), "[Config Error]：each split task must have valid milliseconds sleep time");
+        Assert.isTrue(isNegative(this.getDynamicDbQueryNumber()) && isNegative(this.getTaskSubmitCount()), "[Config Error]：each split task must have valid batch size");
+        Assert.isTrue(Objects.nonNull(uniqueKey()), "[Code Error]: each table should have unique key");
         // param check
-        Assert.notNull(taskSnapShot, "please generate global snapshot with TaskCtlGenerator.list(...)");
-        TaskDimensionEnum instance = TaskDimensionEnum.getInstance(taskSnapShot);
-        // 基础参数校验
-        Assert.notNull(instance, "you not point at task split dimension such as:" + Arrays.toString(TaskDimensionEnum.values()));
-        taskSnapShot.checkValid(instance);
+        taskSnapShot.checkValid();
         // param custom check
         checkValid(taskSnapShot);
-        return instance;
-
     }
 
     protected String getTaskId() {
-        return String.join(StringPool.UNDERSCORE, applicationName, this.getClass().getSimpleName());
+        return this.getClass().getSimpleName();
     }
 
     //    @Transactional(rollbackFor = Exception.class)
-    public boolean splitAndRunTask(TaskPo taskJob, TaskPo.InitialSnapShot taskSnapShot) {
-        processTaskByScene(taskJob, taskSnapShot);
-        // 直接执行
-        return tryFinishJob(taskJob, taskSnapShot);
-    }
-
-    protected abstract TaskSegment splitAndRunTask(Integer taskId, TaskPo.InitialSnapShot initialSnapShot, String tableId);
-
-    protected abstract TaskSegment batchExecute(List<TaskSegment> objects, TaskPo.InitialSnapShot initialSnapShot);
-
-    protected abstract void processTaskByScene(TaskPo taskJob, TaskPo.InitialSnapShot taskSnapShot);
-
-
-    private boolean processWorkingSnapshot(TaskPo taskJob, TaskPo.InitialSnapShot initialSnapShot) {
-        // 获取所有执行中快照
-        List<TaskSegment> segmentList = taskHandler.listWorkingSegment(taskJob.getId());
-        TaskSegment taskSegment;
-        if (ObjectUtils.isEmpty(segmentList)) {
-            taskSegment = taskHandler.listLastSegment(taskJob.getId());
-            if (ObjectUtils.isEmpty(taskSegment)) {
-                // 无数据，重新按内容划分
-                return !splitAndRunTask(taskJob, initialSnapShot);
-            }
+    public void splitAndRunTask(TaskPo.InitialSnapShot taskSnapShot) {
+        if (taskSnapShot.isDivideTable()) {
+            processDivideTableSplitTask(taskSnapShot);
         } else {
-            taskSegment = batchExecute(segmentList, initialSnapShot);
+            processSimpleTableTask(taskSnapShot, taskSnapShot.getIndex());
         }
-        return !tryFinishJob(taskJob, initialSnapShot, taskSegment);
     }
 
-    private boolean tryFinishJob(TaskPo taskJob, TaskPo.InitialSnapShot initialSnapShot, TaskSegment lastSegment) {
-        currentSceneLastSegemntMap.put(getTaskKey(taskJob), lastSegment);
-        boolean res = tryFinishJob(taskJob, initialSnapShot);
-        if (initialSnapShot.isDivideTable()) {
-            String substring = lastSegment.getSnapshotValue().substring(lastSegment.getSnapshotValue().lastIndexOf('_') + 1);
-            initialSnapShot.setTableStart(Integer.valueOf(substring));
-            initialSnapShot.setStartTime(lastSegment.getEndTime());
+    protected abstract void processSimpleTableTask(TaskPo.InitialSnapShot initialSnapShot, String tableId);
+
+    protected abstract void batchExecute(List<TaskSegment> objects, TaskPo.InitialSnapShot initialSnapShot);
+
+
+    protected void processDivideTableSplitTask(TaskPo.InitialSnapShot taskSnapShot) {
+
+        int tempEnd = 0;
+        int end = taskSnapShot.getTableEnd();
+        int start = taskSnapShot.getTableStart();
+        ExecutorService executorService = executorService();
+        while (tempEnd < end) {
+            Integer taskSubmitCount = getTaskSubmitCount();
+            log.info("{} allocate task submit count:{}", getTaskId(), taskSubmitCount);
+            tempEnd = start + taskSubmitCount;
+            if (tempEnd > end) {
+                tempEnd = end;
+            }
+            CountDownLatch countDownLatch = new CountDownLatch(tempEnd - start + 1);
+            for (int i = start; i <= tempEnd; i++) {
+                int finalI = i;
+                executorService.execute(() -> {
+                    try {
+                        if (!isRun()) {
+                            return;
+                        }
+                        String currentTableName = taskSnapShot.getIndex() + finalI;
+                        processSimpleTableTask(taskSnapShot, currentTableName);
+                        dingInfoLog(MessageFormat.format("{0} has finish task:{1}", currentTableName, taskSnapShot.getTimeRange()));
+                    } catch (Exception e) {
+                        log.error(e.getMessage(), e);
+                        dingErrorLog("执行异常" + e);
+                    } finally {
+                        countDownLatch.countDown();
+                    }
+                });
+            }
+            try {
+                countDownLatch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            start = tempEnd + 1;
+
         }
-        // refresh offset
-        if (!res) {
-            return splitAndRunTask(taskJob, initialSnapShot);
-        }
-        return true;
+
     }
 
-    protected abstract boolean judgeTaskFinish(TaskPo.InitialSnapShot initialSnapShot, TaskSegment taskSegment);
 
-    protected abstract boolean dynamicExecuteTask(List<TaskSegment> workingTaskSegment, TaskPo.InitialSnapShot initialSnapShot);
-
-    protected abstract Function<TaskSegment, Boolean> buildExecuteFunction(TaskPo.InitialSnapShot initialSnapShot);
-
-    protected void executeTask(TaskSegment taskSegment, Function<TaskSegment, Boolean> function) {
+    protected void doExecuteTask(TaskSegment taskSegment, Function<TaskSegment, Integer> function) {
         if (!isRun()) {
             return;
         }
-        dingInfoLog(MessageFormat.format("开始执行快照：{0}", taskSegment));
-        Boolean apply = function.apply(taskSegment);
-        if (!apply) {
-            return;
-        }
-        taskSegment.setStatus(TaskStatusEnum.FINISHED.getCode());
-        taskHandler.updateTaskSegment(taskSegment);
-        dingInfoLog(MessageFormat.format("快照：{0}执行已完成", taskSegment));
+        TaskModeEnum instance = TaskModeEnum.getInstance(taskSegment.getMode());
+        TaskPostProcessor taskPostProcessor = TaskPostProcessor.TASK_MANAGER.get(instance);
         try {
-            TimeUnit.MILLISECONDS.sleep(getSleepTime());
-        } catch (InterruptedException ignored) {
+            if (Objects.isNull(taskPostProcessor)) {
+                function.apply(taskSegment);
+                return;
+            }
+            taskPostProcessor.postProcessBeforeExecute(taskSegment);
+            Integer apply = function.apply(taskSegment);
+            if (apply == 0) {
+                return;
+            }
+            taskPostProcessor.postProcessAfterExecute(taskSegment, apply);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            dingErrorLog(getPartInfo(taskSegment, "执行异常：" + e, true));
+            if (Objects.nonNull(taskSegment.getSnapshotValue())) {
+                PerfUtil.countFail(TaskUtil.getPrefixWithOutUnderLine(taskSegment.getSnapshotValue()), instance, 1);
+            }
         }
     }
 
+    private boolean tryFinishJob(TaskPo taskJob, TaskSegment lastSegment) {
+        // 1. 查询当前任务的按创建时间的最后一个， 根据分表+时间、时间、id进行判断任务是否结束
 
-    private boolean tryFinishJob(TaskPo taskJob, TaskPo.InitialSnapShot initialSnapShot) {
-        TaskSegment taskSegment = currentSceneLastSegemntMap.get(getTaskKey(taskJob));
-        if (Objects.isNull(taskSegment)) {
-            log.error("task：{} maybe has stop, please check finish status", taskJob.getTaskId());
+        if (Objects.isNull(lastSegment)) {
+            dingErrorLog(MessageFormat.format("{0}尝试完结任务:{1}失败，请关注", getTaskId(), ""));
             return false;
         }
-        if (!TaskStatusEnum.FINISHED.getCode().equals(taskSegment.getStatus())) {
-            return false;
+        TaskPo.InitialSnapShot initialSnapShot = JsonUtil.toBean(taskJob.getInitialSnapShot(), TaskPo.InitialSnapShot.class);
+
+        LocalDateTime endTime = lastSegment.getEndTime();
+        boolean timeFinished = endTime.plusNanos(1).isAfter(initialSnapShot.getEndTime());
+        boolean divideTable = initialSnapShot.isDivideTable();
+        boolean divideTableFinish = false;
+        int execEnd = 0;
+        if (divideTable) {
+            String snapshotValue = lastSegment.getSnapshotValue();
+            execEnd = Integer.parseInt(snapshotValue.substring(snapshotValue.lastIndexOf("_") + 1));
+            divideTableFinish = execEnd == initialSnapShot.getTableEnd();
         }
-        boolean flag = judgeTaskFinish(initialSnapShot, taskSegment);
-        if (flag) {
-            dingErrorLog(MessageFormat.format("job:{0}，global task has finished ", taskJob));
-            taskJob.setTaskStatus(TaskStatusEnum.FINISHED.getCode());
-            taskHandler.updateTask(taskJob);
-            taskHandler.deleteTaskWithSegment(taskJob);
+        if ((!divideTable && timeFinished) || (divideTable && divideTableFinish && timeFinished)) {
+            return true;
         }
-        return flag;
+        log.info("{}未到任务终点，当前时间进度:{}， 是否分表：{} 分表进度:{}", getTaskId(), DateTimeUtil.format(endTime), divideTable, execEnd);
+        return false;
     }
 
     /**
@@ -322,7 +312,8 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
      */
     protected TaskPo.InitialSnapShot instantiationSnapShot(TaskExecuteParam param) {
         TaskPo.InitialSnapShot initialSnapShot = TaskPo.InitialSnapShot.convertToSnapShot(param);
-        if (initialSnapShot.isIncrementSync()) {
+        validateJob(initialSnapShot);
+        if (TaskModeEnum.isIncrementSync(initialSnapShot.getMode())) {
             initIncrementSync(initialSnapShot);
         }
         return initialSnapShot;
@@ -338,21 +329,19 @@ public abstract class AbstractTaskContext implements TaskMachine, TaskControlSer
             // 默认从当日0点开始同步
             endTime = LocalDateTime.of(endTime.toLocalDate(), LocalTime.MIN);
         }
-        startTime = endTime.plus(TaskUtil.buildDurationPeriod(initialSnapShot.getSyncPeriod()));
+        startTime = endTime.plus(initialSnapShot.convertToPeriod());
+
         // 小于0 T-n   大于0 T+n
+        if (!initialSnapShot.getSyncPeriod().contains("-")) {
+            LocalDateTime temp = endTime;
+            endTime = startTime;
+            startTime = temp;
+        }
         initialSnapShot.setStartTime(startTime);
         initialSnapShot.setEndTime(endTime);
     }
 
-    protected String getTaskKey(TaskPo taskJob) {
-        return getTaskKey(taskJob.getMode());
-    }
-
-    protected String getTaskKey(Integer mode) {
+    protected String getTaskKey(String mode) {
         return getTaskId() + UNIFIED + mode;
-    }
-
-    protected void updateWorkingMode(Integer mode, Boolean statue) {
-        workingMode.put(getTaskKey(mode), statue);
     }
 }

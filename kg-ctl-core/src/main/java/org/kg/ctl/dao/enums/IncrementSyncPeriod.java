@@ -3,9 +3,6 @@ package org.kg.ctl.dao.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.concurrent.TimeUnit;
 
 /**

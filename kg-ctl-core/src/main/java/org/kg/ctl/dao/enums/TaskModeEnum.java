@@ -5,6 +5,7 @@ import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Description:
@@ -14,16 +15,29 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 public enum TaskModeEnum {
-    INCR_SYNC(0, "增量同步"),
-    ALL_INF_SYNC(1, "全量同步")
+
+    INC_SYNC("inc_sync", "增量同步"),
+
+    FULL_SYNC("full_sync", "全量同步"),
+
+    INC_CHECK("inc_check", "增量比对"),
+
+    FUll_CHECK("full_check", "全量比对"),
+
+    INC_ARCHIVE("inc_archive", "增量归档"),
+
+    FULL_ARCHIVE("full_archive", "全量归档"),
+
+//    RECOVER("recover", "数据恢复"),
+
     ;
 
-    private final Integer mode;
+    private final String mode;
 
     private final String description;
 
 
-    private static final Map<Integer, TaskModeEnum> MAP = new HashMap<>();
+    private static final Map<String, TaskModeEnum> MAP = new HashMap<>();
 
     static {
         TaskModeEnum[] values = TaskModeEnum.values();
@@ -32,7 +46,11 @@ public enum TaskModeEnum {
         }
     }
 
-    public static TaskModeEnum getInstance(Integer mode) {
+    public static TaskModeEnum getInstance(String mode) {
         return MAP.get(mode);
+    }
+
+    public static boolean isIncrementSync(String mode) {
+        return Objects.nonNull(getInstance(mode)) && mode.startsWith("inc");
     }
 }

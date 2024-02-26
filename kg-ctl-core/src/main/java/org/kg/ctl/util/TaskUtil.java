@@ -1,13 +1,9 @@
 package org.kg.ctl.util;
 
-import javafx.concurrent.Task;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.kg.ctl.dao.TaskSegment;
-import org.kg.ctl.dao.enums.TaskStatusEnum;
-import org.kg.ctl.service.BatchSaveSegmentTaskEvent;
 import org.springframework.util.ObjectUtils;
 
 import java.time.Duration;
@@ -16,11 +12,13 @@ import java.time.Period;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 public class TaskUtil {
 
-    private static final Integer BATCH_SIZE = 500;
+    private static final Pattern pattern = Pattern.compile("(?<=[a-z])([A-Z])");
 
     public static TemporalAmount buildDurationPeriod(String key) {
         return key.contains("T") ? buildTaskDuration(key) : buildTaskPeriod(key);
@@ -29,16 +27,12 @@ public class TaskUtil {
     public static Duration buildTaskDuration(String period) {
         return buildTaskDuration(period, 1);
     }
+
     public static Duration buildTaskDuration(String period, int defaultValue) {
         if (ObjectUtils.isEmpty(period)) {
             return Duration.ofMinutes(defaultValue);
         }
-        try {
-            return Duration.parse(period);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        return Duration.ofMinutes(defaultValue);
+        return Duration.parse(period);
     }
 
 
@@ -50,12 +44,7 @@ public class TaskUtil {
         if (ObjectUtils.isEmpty(period)) {
             return Period.ofDays(defaultValue);
         }
-        try {
-            return Period.parse(period);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        return Period.ofDays(defaultValue);
+        return Period.parse(period);
     }
 
     public static List<Integer> list(int end) {
@@ -78,41 +67,6 @@ public class TaskUtil {
             arrayList.add(i);
         }
         return arrayList;
-    }
-
-
-    public static List<TaskSegment> list(Integer taskId, Integer start, Integer end, Integer spiltCount) {
-        Integer tempEnd = 0;
-        ArrayList<TaskSegment> taskSegements = new ArrayList<>();
-        int i = 0;
-        while (tempEnd < end) {
-            tempEnd = start + spiltCount;
-            if (tempEnd > end) {
-                tempEnd = end;
-            }
-
-            taskSegements.add(
-                    TaskSegment.builder()
-                            .taskId(taskId)
-                            .segmentId(++i)
-                            .status(TaskStatusEnum.WORKING.getCode())
-                            .startIndex(start)
-                            .endIndex(tempEnd)
-                            .build()
-
-            );
-            batchSaveBarrier(taskSegements, i);
-            start = tempEnd + 1;
-        }
-
-        return taskSegements;
-    }
-
-    private static void batchSaveBarrier(ArrayList<TaskSegment> taskSegments, int i) {
-        if (i % BATCH_SIZE == 0) {
-            SpringUtil.publishEvent(new BatchSaveSegmentTaskEvent(taskSegments));
-            taskSegments.clear();
-        }
     }
 
 
@@ -143,83 +97,36 @@ public class TaskUtil {
         return list.subList(from, from + batchSize);
     }
 
-    public static List<TaskSegment> list(Integer taskId, List<?> dataList, Integer batchSize) {
-        int totalCount = dataList.size() / batchSize;
-        if (totalCount == 0) {
-            ArrayList<TaskSegment> taskSegements = new ArrayList<>();
-            taskSegements.add(TaskSegment.builder()
-                    .taskId(taskId)
-                    .segmentId(0)
-                    .status(TaskStatusEnum.WORKING.getCode())
-                    .snapshotValue(JsonUtil.toJson(dataList))
-                    .build()
-            );
-            return taskSegements;
+    public static String getPrefixWithOutUnderLine(String tableName) {
+        int i = tableName.lastIndexOf("_");
+        if (i < 0) {
+            return tableName;
         }
-        int leaveSize = dataList.size() % batchSize;
-        if (leaveSize != 0) {
-            totalCount++;
-        }
-        ArrayList<TaskSegment> objects = new ArrayList<>();
-        for (int i = 0; i < totalCount; i++) {
-            int from = i * batchSize;
-            int to = i * batchSize + batchSize;
-            if (i == totalCount - 1) {
-                to = dataList.size();
-            }
-            List<?> subList = dataList.subList(from, to);
-            TaskSegment build = TaskSegment.builder()
-                    .taskId(taskId)
-                    .segmentId(i + 1)
-                    .status(TaskStatusEnum.WORKING.getCode())
-                    .snapshotValue(JsonUtil.toJson(subList))
-                    .build();
-            objects.add(build);
-            batchSaveBarrier(objects, i);
-        }
-        return objects;
+        return tableName.substring(0, i);
     }
 
-
-    public static List<TaskSegment> list(Integer taskId, LocalDateTime start, LocalDateTime end, TemporalAmount duration) {
-        ArrayList<TaskSegment> objects = new ArrayList<>();
-        LocalDateTime tempStart = start;
-        LocalDateTime tempEnd = start;
-        int i = 0;
-        while (true) {
-            tempEnd = tempStart.plus(duration);
-            if (tempStart.plusNanos(1).isAfter(end)) {
-                break;
+    public static String underLineToCamel(String str) {
+        StringBuilder sb = new StringBuilder();
+        String[] split = str.split("_");
+        for (int i = 0; i < split.length; i++) {
+            String word = split[i];
+            if (i == 0) {
+                sb.append(word);
+            } else {
+                sb.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
             }
-            TaskSegment build = TaskSegment.builder()
-                    .taskId(taskId)
-                    .segmentId(++i)
-                    .status(TaskStatusEnum.WORKING.getCode())
-                    .startTime(tempStart)
-                    .endTime(tempEnd)
-                    .build();
-
-            objects.add(build);
-            tempStart = tempEnd;
-            batchSaveBarrier(objects, i);
         }
-        return objects;
+        return sb.toString();
     }
 
-    public static List<TimeSegment> list(LocalDateTime start, LocalDateTime end, TemporalAmount duration) {
-        ArrayList<TimeSegment> objects = new ArrayList<>();
-        LocalDateTime tempStart = start;
-        LocalDateTime tempEnd = start;
-        while (true) {
-            tempEnd = tempStart.plus(duration);
-            if (tempStart.plusNanos(1).isAfter(end)) {
-                break;
-            }
-
-            objects.add(new TimeSegment(tempStart, tempEnd));
-            tempStart = tempEnd;
+    public static String camelToUnderLine(String input) {
+        Matcher matcher = pattern.matcher(input);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "_" + matcher.group(1).toLowerCase());
         }
-        return objects;
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
 
@@ -238,5 +145,10 @@ public class TaskUtil {
     public static class IdSegment {
         Integer start;
         Integer end;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(underLineToCamel("helloWorldJava"));
+        System.out.println(camelToUnderLine("hello_world_java"));
     }
 }

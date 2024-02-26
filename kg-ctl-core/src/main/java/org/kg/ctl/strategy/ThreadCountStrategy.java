@@ -2,6 +2,7 @@ package org.kg.ctl.strategy;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.kg.ctl.config.JobConstants;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +20,7 @@ public enum ThreadCountStrategy {
     IO(0){
         @Override
         public int getThreadCount() {
-            return INTERNAL_PROCESSORS << 1;
+            return JobConstants.INTERNAL_PROCESSORS << 1;
         }
     },
     MIX(1){
@@ -31,7 +32,7 @@ public enum ThreadCountStrategy {
     CPU(2) {
         @Override
         public int getThreadCount() {
-            return INTERNAL_PROCESSORS;
+            return JobConstants.INTERNAL_PROCESSORS;
         }
     }
 
@@ -39,7 +40,6 @@ public enum ThreadCountStrategy {
 
     ;
 
-    public static final int INTERNAL_PROCESSORS = Runtime.getRuntime().availableProcessors();
     private static final Map<Integer, ThreadCountStrategy> MAP = new HashMap<Integer, ThreadCountStrategy>();
 
     static {
