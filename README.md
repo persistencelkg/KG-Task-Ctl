@@ -5,7 +5,7 @@
 
 ## 功能展示
 1. 核心代码量【手动coding行数20行以内】
-   ![code.png](img%2Fcode.png)
+   ![co.png](img%2Fco.png)
 2. 效果展示- 日志收集
    ![log.png](img%2Flog.png)
 3. 钉钉同步进度
