@@ -17,6 +17,7 @@ import java.util.Objects;
 public class SpringUtil implements ApplicationContextAware {
 
     private static ApplicationContext APPLICATION_CONTEXT;
+
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         if (Objects.isNull(APPLICATION_CONTEXT)) {

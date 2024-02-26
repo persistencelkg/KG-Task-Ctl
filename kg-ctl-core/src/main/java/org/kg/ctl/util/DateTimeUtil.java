@@ -3,6 +3,7 @@ package org.kg.ctl.util;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Author liuyy
@@ -17,6 +18,16 @@ public class DateTimeUtil {
 
     public static final DateTimeFormatter YYYY_MM_DD_HH_MM_SS = DateTimeFormatter.ofPattern(PATTERN_YYYY_MM_DD_HH_MM_SS);
     public static final DateTimeFormatter YYYY_MM_DD = DateTimeFormatter.ofPattern(PATTERN_YYYY_MM_DD);
+
+    private static final Pattern T_N_REGX =  Pattern.compile("^T[+-]\\d+(D)?$");
+
+    public static boolean isValid(String str) {
+        return T_N_REGX.matcher(str).matches();
+    }
+
+    public static void main(String[] args) {
+        System.out.println(isValid("T-1h"));
+    }
 
     public static LocalDateTime parse(String dateTimeString) {
         return LocalDateTime.parse(dateTimeString, YYYY_MM_DD_HH_MM_SS);

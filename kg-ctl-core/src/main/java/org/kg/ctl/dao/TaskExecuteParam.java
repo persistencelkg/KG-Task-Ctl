@@ -1,7 +1,7 @@
 package org.kg.ctl.dao;
 
 import lombok.Data;
-import org.springframework.util.StringUtils;
+import org.kg.ctl.dao.enums.InsertModeEnum;
 
 import java.util.Collection;
 
@@ -37,9 +37,16 @@ public class TaskExecuteParam {
 
     /**
      * 同步模式
+     * @see org.kg.ctl.dao.enums.TaskModeEnum
      */
 
-    private Integer mode;
+    private String mode;
+
+    /**
+     * 插入模式，默认写覆盖
+     * @see InsertModeEnum
+     */
+    private String insertMode = InsertModeEnum.COVER.getMode();
 
     /**
      * 同步间隔: P1D
