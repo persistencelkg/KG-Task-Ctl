@@ -9,10 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
-
-import static org.SyncDataCtlAutoConfiguration.DEFAULT_SCAN_MAPPER;
-import static org.SyncDataCtlAutoConfiguration.INTERNAL_BASE_PACKAGE_JEXL;
 
 /**
  * Description: 脚手架的自动装配
@@ -22,11 +18,8 @@ import static org.SyncDataCtlAutoConfiguration.INTERNAL_BASE_PACKAGE_JEXL;
 @Configuration
 @ConditionalOnWebApplication
 @ConditionalOnClass(TaskDynamicConfig.class)
-@ComponentScan(basePackages = {INTERNAL_BASE_PACKAGE_JEXL})
-@MapperScan(basePackages = {DEFAULT_SCAN_MAPPER})
-// aim to support AopContext#currentProxy()
-@EnableAspectJAutoProxy(exposeProxy = true)
-//@AutoConfigureBefore(MybatisPlusAutoConfiguration.class)
+@ComponentScan(basePackages = "org.kg")
+@MapperScan(basePackages = {"com.**..mapper", "com.**..dao", "org.**..mapper", "org.**..dao"})
 @Slf4j
 public class SyncDataCtlAutoConfiguration implements SmartInitializingSingleton {
 
@@ -54,5 +47,6 @@ public class SyncDataCtlAutoConfiguration implements SmartInitializingSingleton 
         log.info("------------- ctl load end ------------- >>>");
 
     }
+
 
 }
