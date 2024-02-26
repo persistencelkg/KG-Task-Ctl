@@ -12,15 +12,16 @@ import java.util.List;
 /**
  * Description: 如何基于脚手架快速开发属于自己数据同步
  * 1. 配置多数据源，因为至少从A到B有两个
- * 2. 引入依赖，更具需要继承
- * <ul>
- *     <li>{@link  org.kg.ctl.core.DataSyncCommonProcessor} : 基于时间段数据同步</li>
- *     <li>{@link  org.kg.ctl.core.DataCheckProcessor} : 数据比对</li>
-*      <li>{@link  org.kg.ctl.core.UniqueKeyDataSyncProcessor} : 基于唯一索引数据同步</li>
+ * 2. 引入依赖，并根据需要继承如下类:
  *
- * </ul>
- * 3. 配合job 参数，默认基于xxl-job
- * 4. 配置频次控制参数，可基于apollo、nacos配中心等
+ <ul>
+    <li>{@link  org.kg.ctl.core.DataSyncCommonProcessor} : 基于时间段数据同步</li>
+    <li>{@link  org.kg.ctl.core.DataCheckProcessor} : 数据比对</li>
+    <li>{@link  org.kg.ctl.core.UniqueKeyDataSyncProcessor} : 基于唯一索引数据同步</li>
+ </ul>
+
+ 3. 配合job 参数，默认基于xxl-job
+ 4. 配置频次控制参数，可基于apollo、nacos配中心等
  * Author: 李开广
  * Date: 2023/10/17 6:58 PM
  */
