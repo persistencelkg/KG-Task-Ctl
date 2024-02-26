@@ -11,6 +11,7 @@ import org.kg.ctl.mapper.TaskSegmentMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,10 +43,16 @@ public class TaskSegmentServiceImpl extends ServiceImpl<TaskSegmentMapper, TaskS
     }
 
     @Override
-    public void deleteTaskSegments(String taskId) {
+    public void deleteTaskSegments(Integer taskId) {
+        ArrayList<Integer> objects = new ArrayList<>();
+        objects.add(taskId);
+        deleteTaskSegments(objects);
+    }
+
+    @Override
+    public void deleteTaskSegments(List<Integer> batchTaskIds) {
         LambdaQueryWrapper<TaskSegment> taskPoLambdaQueryWrapper = this.sqlQuery();
-        taskPoLambdaQueryWrapper.eq(!ObjectUtils.isEmpty(taskId), TaskSegment::getTaskId, taskId);
-        // TODO 限流
+        taskPoLambdaQueryWrapper.in(!ObjectUtils.isEmpty(batchTaskIds), TaskSegment::getTaskId, batchTaskIds);
         super.remove(taskPoLambdaQueryWrapper);
     }
 

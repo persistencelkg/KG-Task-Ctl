@@ -20,7 +20,9 @@ public interface TaskSegmentService {
 
     void insertTaskSegments(List<TaskSegment> list);
 
-    void deleteTaskSegments(String taskId);
+    void deleteTaskSegments(Integer taskId);
+
+    void deleteTaskSegments(List<Integer> batchTaskIds);
 
     TaskSegment listLastSegment(Integer taskId);
 

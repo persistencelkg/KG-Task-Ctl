@@ -37,7 +37,7 @@ public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> 
 
 
     @Override
-    protected void dynamicExecuteTask(List<TaskSegment> workingTaskSegment, TaskPo.InitialSnapShot initialSnapShot) {
+    protected boolean dynamicExecuteTask(List<TaskSegment> workingTaskSegment, TaskPo.InitialSnapShot initialSnapShot) {
         int n = getConcurrentThreadCount();
         ExecutorService executorService = executorService();
         CountDownLatch countDownLatch = new CountDownLatch(n);
@@ -52,12 +52,17 @@ public abstract class SimpleTimeRangeProcessor<T> extends AbstractTaskFromTo<T> 
                 e.printStackTrace();
                 dingErrorLog(MessageFormat.format("快照：{0} 执行出现异常：{1}", taskSegment, e));
             }
+            if (!isRun()) {
+                dingErrorLog(MessageFormat.format("快照:{0}已经停止，当前执行快照：{1}", taskSegment.getTaskId(), taskSegment));
+                return false;
+            }
         }
         try {
             countDownLatch.await();
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
+        return true;
 
     }
 

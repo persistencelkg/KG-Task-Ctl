@@ -48,9 +48,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, TaskPo> implements 
 
 
     @Override
-    public void deleteTask(String taskId) {
+    public void deleteTask(Integer taskId) {
         LambdaQueryWrapper<TaskPo> taskPoLambdaQueryWrapper = this.sqlQuery();
-        taskPoLambdaQueryWrapper.eq(!ObjectUtils.isEmpty(taskId), TaskPo::getTaskId, taskId);
+        taskPoLambdaQueryWrapper.eq(!ObjectUtils.isEmpty(taskId), TaskPo::getId, taskId);
         this.remove(taskPoLambdaQueryWrapper);
     }
 

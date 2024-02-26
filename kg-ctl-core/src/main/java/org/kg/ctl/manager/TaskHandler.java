@@ -59,9 +59,15 @@ public class TaskHandler {
         return taskSegments;
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public void deleteTaskWithSegment(String taskId) {
-//        taskService.deleteTask(taskId);
-        taskSegmentService.deleteTaskSegments(taskId);
+
+    public void deleteTaskWithSegment(TaskPo taskPo) {
+        if (!taskPo.isIncrementSync()) {
+            taskService.deleteTask(taskPo.getId());
+        }
+        taskSegmentService.deleteTaskSegments(taskPo.getId());
+    }
+
+    public void batchDeleteTaskWithSegment(List<Integer> taskIds) {
+        taskSegmentService.deleteTaskSegments(taskIds);
     }
 }

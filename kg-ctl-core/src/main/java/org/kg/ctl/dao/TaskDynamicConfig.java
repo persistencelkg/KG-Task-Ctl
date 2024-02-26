@@ -25,7 +25,7 @@ public class TaskDynamicConfig {
 
     private static Map<String, TaskGranularConfig> jobConfig;
 
-    @Value("${kg.job-config}")
+    @Value("${kg.job-config:}")
     public void setJobConfig(String jobConfig) {
         TaskDynamicConfig.jobConfig = JsonUtil.toBean(jobConfig, new TypeReference<Map<String, TaskGranularConfig>>() {});
     }
