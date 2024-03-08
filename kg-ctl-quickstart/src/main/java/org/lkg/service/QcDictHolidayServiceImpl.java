@@ -1,7 +1,5 @@
 package org.lkg.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.kg.ctl.service.SyncService;
 import org.lkg.mapper.QcHolidayTargetDictMapper;
 import org.lkg.pojo.QcHolidayTargetDict;
