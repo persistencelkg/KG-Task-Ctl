@@ -23,7 +23,7 @@ import java.util.Objects;
 public class TaskDynamicConfig {
 
     private static TaskDynamicConfig configInstance;
-    private String bizPeekDuration = "6->21";
+    private String[] bizPeekDuration = new String[]{"6->10", "11->14", "16->21"};
     /**
      * 低峰最大查询数据量
      */

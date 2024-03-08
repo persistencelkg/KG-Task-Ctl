@@ -17,14 +17,16 @@ import java.util.Set;
 @Slf4j
 public class CheckService {
 
-    public boolean check(Object from, Object to, Set<String> excludeFields) {
+    public boolean check(Object from, Object to, Set<String> excludeFields, String uniqueKey) {
+        Object uniqueValue = null;
         try {
             Class<?> fromClass = from.getClass();
             Class<?> targetClass = to.getClass();
+            uniqueValue = getFieldValue(from, fromClass, uniqueKey);
             // 优先比较update Time，
-            if (!compareEachOther(from, to, fromClass, targetClass, "updateTime")) {
-                log.warn("update_time not satisfy check condition");
-                return false;
+            if (!compareEachOther(from, to, fromClass, targetClass, "updateTime", uniqueKey)) {
+                log.warn("{}: update_time not satisfy check condition", uniqueValue);
+                return true;
             }
             Field[] declaredFields = from.getClass().getDeclaredFields();
             boolean baseFilter = !CollectionUtils.isEmpty(excludeFields);
@@ -33,29 +35,28 @@ public class CheckService {
                 if (baseFilter && excludeFields.contains(name)) {
                     continue;
                 }
-                if (!compareEachOther(from, to, fromClass, targetClass, name)) {
-                    log.error("{} check not consist！from :{} \n to{}", name, from, to);
+                if (!compareEachOther(from, to, fromClass, targetClass, name, uniqueKey)) {
                     return false;
                 }
             }
             return true;
         } catch (Exception e) {
-            log.error("check", e);
+            log.error("{}, check error", uniqueValue, e);
             return false;
         }
 
     }
 
-    private boolean compareEachOther(Object from, Object to, Class<?> fromClass, Class<?> targetClass, String fieldName) {
+    private boolean compareEachOther(Object from, Object to, Class<?> fromClass, Class<?> targetClass, String fieldName, String uniqueValue) {
         try {
             Object fromVal = getFieldValue(from, fromClass, fieldName);
             Object toVal = getFieldValue(to, targetClass, fieldName);
             if (!Objects.equals(fromVal, toVal)) {
-                log.warn("field: {}, check fail, from val:{}, to val:{}", fieldName, fromVal, toVal);
+                log.warn("key:{} field: {}, check fail, from val:{}, to val:{}", uniqueValue, fieldName, fromVal, toVal);
                 return false;
             }
         } catch (Exception e) {
-            log.warn("field:{} check error:", fieldName, e);
+            log.warn("key:{} field:{} check error:", uniqueValue, fieldName, e);
             return false;
         }
         return true;

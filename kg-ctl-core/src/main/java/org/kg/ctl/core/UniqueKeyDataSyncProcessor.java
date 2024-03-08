@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
+import org.kg.ctl.mapper.SyncMapper;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -21,7 +22,7 @@ import java.util.function.Predicate;
 @Slf4j
 public abstract class UniqueKeyDataSyncProcessor<S, T> extends DataSyncCommonProcessor<S, T> {
 
-    public UniqueKeyDataSyncProcessor(DbBatchQueryMapper<S> from, DbBatchQueryMapper<T> to, IService<T> iService) {
+    public UniqueKeyDataSyncProcessor(SyncMapper<S> from, SyncMapper<T> to, IService<T> iService) {
         super(from, to, iService);
     }
 

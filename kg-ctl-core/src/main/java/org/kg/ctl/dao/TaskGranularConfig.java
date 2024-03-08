@@ -13,23 +13,23 @@ import lombok.Data;
 @Data
 public class TaskGranularConfig {
 
-    private String bizPeekDuration = "6->21";
+    private String[] bizPeekDuration;
     /**
      * 低峰最大查询数据量
      */
-    private int maxBatchSize = 500;
+    private int maxBatchSize;
 
     /**
      * 高峰最大查询数据量
      */
-    private int batchSize = 300;
+    private int batchSize;
 
     /**
      * 每次执行后的休眠时间 毫秒
      */
-    private long sleepTime = 1000L;
+    private long sleepTime;
 
-    private int submitThreadCount = 2;
+    private int submitThreadCount;
 
     /**
      * 业务场景
