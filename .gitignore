@@ -23,3 +23,5 @@
 hs_err_pid*
 replay_pid*
 
+
+kg-ctl-quickstart/src/main/resources/application-db.properties
