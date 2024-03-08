@@ -3,7 +3,9 @@ package org.kg.ctl.core;
 import com.baomidou.mybatisplus.extension.service.IService;
 import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
+import org.kg.ctl.mapper.SyncMapper;
 import org.kg.ctl.service.CheckService;
+import org.kg.ctl.service.SyncService;
 import org.kg.ctl.util.TaskUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
@@ -25,12 +27,12 @@ import java.util.stream.Collectors;
 public abstract class DataSyncCommonProcessor<Source, Target> extends AbstractTaskFromTo<Source, Target> {
 
 
-    private final IService<Target> iService;
+    private final SyncService<SyncMapper<Target>, Target> syncService;
 
     @Autowired
-    public DataSyncCommonProcessor(DbBatchQueryMapper<Source> from, DbBatchQueryMapper<Target> target, IService<Target> iService) {
+    public DataSyncCommonProcessor(SyncMapper<Source> from, SyncMapper<Target> target, IService<Target> iService) {
         super(from, target);
-        this.iService = iService;
+        this.syncService = (SyncService<SyncMapper<Target>, Target>) iService;;
     }
 
     protected abstract List<Target> convertToTargetObject(Collection<Source> sourceData, String tableName);
@@ -51,7 +53,7 @@ public abstract class DataSyncCommonProcessor<Source, Target> extends AbstractTa
         List<Target> needCover = objects.stream().filter(ref -> tidbUniqueList.contains(CheckService.getFieldValue(ref, ref.getClass(), property))).collect(Collectors.toList());
         if (ObjectUtils.isEmpty(needCover)) {
             LocalDateTime start = LocalDateTime.now();
-            iService.saveBatch(objects);
+            targetDbBatchQueryMapper.insertWithClone(objects);
             LocalDateTime end = LocalDateTime.now();
             log.info("{} batch add. size:{} cost:{}ms", keyPrefix, objects.size(), Duration.between(start, end).toMillis());
             return;
@@ -60,14 +62,14 @@ public abstract class DataSyncCommonProcessor<Source, Target> extends AbstractTa
         // no have insert
         if (!ObjectUtils.isEmpty(objects)) {
             LocalDateTime start = LocalDateTime.now();
-            iService.saveBatch(objects);
+            targetDbBatchQueryMapper.insertWithClone(objects);
             LocalDateTime end = LocalDateTime.now();
             log.info("{} batch add. size:{} cost:{}ms", keyPrefix, objects.size(), Duration.between(start, end).toMillis());
         }
         // if db have cover
         if (insertCovert) {
             LocalDateTime start = LocalDateTime.now();
-            iService.updateBatchById(needCover);
+            syncService.batchOperationWithOutTransaction(needCover, targetDbBatchQueryMapper::updateWithClone);
             LocalDateTime end = LocalDateTime.now();
             log.info("{} batch update. size:{} cost:{}ms", keyPrefix, needCover.size(), Duration.between(start, end).toMillis());
         } else {

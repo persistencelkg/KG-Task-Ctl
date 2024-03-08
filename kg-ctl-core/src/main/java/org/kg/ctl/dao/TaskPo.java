@@ -125,10 +125,10 @@ public class TaskPo {
                     Assert.isTrue(plus.isBefore(LocalDateTime.now()), "increment sync current before interval not valid, no data happen future");
                 }
             } else {
-                Assert.isTrue(targetTime.contains("create"), "you choose all-in time sync, should use like `create_time`");
+                Assert.isTrue(targetTime.contains("create"), "you choose full_sync time sync, should use like `create_time`");
                 Assert.isTrue(Objects.nonNull(getStartTime())
                         && Objects.nonNull(getEndTime())
-                        && getStartTime().isBefore(getEndTime()), "you choose `all-in sync`, but not set a valid time range");
+                        && getStartTime().isBefore(getEndTime()), "you choose `full_sync`, but not set a valid time range");
             }
         }
 

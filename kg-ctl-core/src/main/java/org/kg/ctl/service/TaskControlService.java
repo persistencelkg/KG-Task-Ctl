@@ -31,7 +31,7 @@ public interface TaskControlService extends TaskGranularService {
      * @return
      */
     default Integer getTaskSubmitCount() {
-        return isPeek() ? TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getSubmitThreadCount() : INTERNAL_PROCESSORS >> 1;
+        return isPeek() ?  INTERNAL_PROCESSORS >> 1 : TaskDynamicConfig.getConfig(this.getClass().getSimpleName()).getSubmitThreadCount();
     }
 
     /**

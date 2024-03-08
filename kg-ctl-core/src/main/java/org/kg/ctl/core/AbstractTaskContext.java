@@ -65,7 +65,7 @@ public abstract class AbstractTaskContext implements TableMetaData, TaskMachine,
     private static final String MODE_KEY = "mode";
 
 
-    private final ConcurrentHashMap<String, Long> jobGlobalCountMap = new ConcurrentHashMap<>(8);
+    private final ConcurrentHashMap<String, Long> jobGlobalCountMap = new ConcurrentHashMap<>();
 
     protected void runTask() {
         if (!isRun()) {
@@ -170,9 +170,9 @@ public abstract class AbstractTaskContext implements TableMetaData, TaskMachine,
             Assert.isTrue(timeValid, "start_time and end_time is must param");
             Assert.isTrue(taskSnapShot.getStartTime().isBefore(taskSnapShot.getEndTime()), "start_time must less than end_time");
         }
-        if (taskSnapShot.isDivideTable()) {
-            Assert.isTrue(taskSnapShot.isValidDivideTable() > 0, "your choose table id with time range， but not support valid id range");
-        }
+//        if (taskSnapShot.isDivideTable()) {
+//            Assert.isTrue(taskSnapShot.isValidDivideTable() > 0, "your choose table id with time range， but not support valid id range");
+//        }
         if (idIncrement()) {
             Assert.isTrue(this.getDynamicDbQueryNumber() <= QUERY_SIZE_PER_SEC, "query  size :" + this.getDynamicDbQueryNumber() + " too more， reject request");
         }
@@ -231,6 +231,9 @@ public abstract class AbstractTaskContext implements TableMetaData, TaskMachine,
                         }
                         String currentTableName = taskSnapShot.getIndex() + finalI;
                         processSimpleTableTask(taskSnapShot, currentTableName);
+                        if (!isRun()) {
+                            return;
+                        }
                         dingInfoLog(MessageFormat.format("{0} has finish task:{1}", currentTableName, taskSnapShot.getTimeRange()));
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);

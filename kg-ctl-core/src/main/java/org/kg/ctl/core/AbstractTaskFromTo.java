@@ -6,6 +6,7 @@ import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
 import org.kg.ctl.dao.enums.TaskStatusEnum;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
+import org.kg.ctl.mapper.SyncMapper;
 import org.kg.ctl.util.DateTimeUtil;
 import org.kg.ctl.util.TaskUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +35,12 @@ import static org.kg.ctl.config.JobConstants.QUERY_SIZE_PER_SEC;
 @Slf4j
 public abstract class AbstractTaskFromTo<Source, Target> extends AbstractTaskContext {
 
-    protected final DbBatchQueryMapper<Source> sourceDbBatchQueryMapper;
-    protected final DbBatchQueryMapper<Target> targetDbBatchQueryMapper;
+    protected final SyncMapper<Source> sourceDbBatchQueryMapper;
+    protected final SyncMapper<Target> targetDbBatchQueryMapper;
 
 
     @Autowired
-    public AbstractTaskFromTo(DbBatchQueryMapper<Source> from, DbBatchQueryMapper<Target> targetDbBatchQueryMapper) {
+    public AbstractTaskFromTo(SyncMapper<Source> from, SyncMapper<Target> targetDbBatchQueryMapper) {
         this.sourceDbBatchQueryMapper = from;
         this.targetDbBatchQueryMapper = targetDbBatchQueryMapper;
     }
@@ -142,7 +143,7 @@ public abstract class AbstractTaskFromTo<Source, Target> extends AbstractTaskCon
             }
             tempStart = tempEnd;
         }
-        if (objects.size() > 0) {
+        if (isRun() && objects.size() > 0) {
             String partInfo = getPartInfo(build, MessageFormat.format("{0} current schedule：{1} %", tableId, compute(initialSnapShot, i)), false);
             log.info(partInfo);
             batchExecute(objects, initialSnapShot);

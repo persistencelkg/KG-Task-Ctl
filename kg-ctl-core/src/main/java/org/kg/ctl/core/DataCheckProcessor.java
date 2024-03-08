@@ -2,6 +2,7 @@ package org.kg.ctl.core;
 
 import org.kg.ctl.dao.enums.TaskModeEnum;
 import org.kg.ctl.mapper.DbBatchQueryMapper;
+import org.kg.ctl.mapper.SyncMapper;
 import org.kg.ctl.service.CheckService;
 import org.kg.ctl.util.PerfUtil;
 import org.kg.ctl.util.TaskUtil;
@@ -21,7 +22,7 @@ public abstract class DataCheckProcessor<Source, Target> extends AbstractTaskFro
     @Resource
     private CheckService checkService;
 
-    public DataCheckProcessor(DbBatchQueryMapper<Source> from, DbBatchQueryMapper<Target> target) {
+    public DataCheckProcessor(SyncMapper<Source> from, SyncMapper<Target> target) {
         super(from, target);
     }
 
@@ -50,7 +51,7 @@ public abstract class DataCheckProcessor<Source, Target> extends AbstractTaskFro
                 lostData.add(entry.getKey());
                 continue;
             }
-            boolean check = checkService.check(entry.getValue(), target, ignoreFields);
+            boolean check = checkService.check(entry.getValue(), target, ignoreFields, property);
             if (!check) {
                 checkConsistSize--;
                 PerfUtil.countFail(keyPrefix, taskModeEnum, 1);
