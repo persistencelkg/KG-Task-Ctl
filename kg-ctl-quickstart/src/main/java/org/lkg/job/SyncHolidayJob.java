@@ -27,7 +27,7 @@ public class SyncHolidayJob extends DataSyncCommonProcessor<QcHolidayDict, QcHol
         super(from, target, iService);
     }
 
-    //    @XxlJob("SyncHolidayJob")
+//        @XxlJob("SyncHolidayJob")
     public boolean run() {
         super.runTask();
         return true;
@@ -46,6 +46,11 @@ public class SyncHolidayJob extends DataSyncCommonProcessor<QcHolidayDict, QcHol
     }
 
     @Override
+    protected String targetTableName(String tableName) {
+        return "qc_holiday_target_dict";
+    }
+
+    @Override
     public String uniqueKey() {
         return "id";
     }
@@ -57,6 +62,6 @@ public class SyncHolidayJob extends DataSyncCommonProcessor<QcHolidayDict, QcHol
      */
     @Override
     public String getParam() {
-        return "{\"targetTime\":\"update_time\",\"startTime\":\"2021-01-01 00:00:00\",\"endTime\":\"2024-01-01 23:59:59\",\"tablePreFix\":\"qc_holiday_dict\",\"mode\":\"inc_sync\",\"syncInterval\":\"PT1H\",\"syncPeriod\":\"T-1\"}";
+        return "{\"targetTime\":\"update_time\",\"startTime\":\"2022-09-01 00:00:00\",\"endTime\":\"2024-01-01 23:59:59\",\"tablePreFix\":\"qc_holiday_dict\",\"mode\":\"full_sync\",\"syncInterval\":\"PT1H\",\"syncPeriod\":\"T-1\"}";
     }
 }

@@ -30,6 +30,12 @@
   <dependencies>
 
     <dependency>
+      <groupId>org.lkg</groupId>
+      <artifactId>MessageNotice-Arhat</artifactId>
+      <version>1.0.0.RELEASE</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
     </dependency>

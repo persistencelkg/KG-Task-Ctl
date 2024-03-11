@@ -6,7 +6,7 @@ import org.kg.ctl.dao.TaskDynamicConfig;
 import org.kg.ctl.dao.TaskPo;
 import org.kg.ctl.dao.TaskSegment;
 import org.kg.ctl.dao.enums.TaskModeEnum;
-import org.kg.ctl.util.DingDingUtil;
+import org.kg.ctl.util.DingDingUtils;
 
 import java.text.MessageFormat;
 
@@ -31,11 +31,11 @@ public interface DingDingService {
     }
 
     default void dingInfoLog(String msg) {
-        DingDingUtil.sendInfoMsg(MessageFormat.format("{0}|{1}", getEnv(), msg), getDingUrl(), getDingSecret());
+        DingDingUtils.sendInfoMsg(MessageFormat.format("{0}|{1}", getEnv(), msg), getDingUrl(), getDingSecret());
     }
 
     default void dingErrorLog(String msg) {
-        DingDingUtil.sendWarnMsg(MessageFormat.format("{0}|{1}", getEnv(), msg), getDingUrl(), getDingSecret());
+        DingDingUtils.sendWarnMsg(MessageFormat.format("{0}|{1}", getEnv(), msg), getDingUrl(), getDingSecret());
     }
 
     default String getPartInfo(TaskSegment taskSegment, String msg, boolean hasEnv) {

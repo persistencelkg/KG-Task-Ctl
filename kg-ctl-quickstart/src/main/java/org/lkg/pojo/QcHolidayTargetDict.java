@@ -1,12 +1,15 @@
 package org.lkg.pojo;
 
+import lombok.Data;
+
 import java.util.Date;
 
 /**
- * Description:
+ * Description: 目的数据表
  * Author: 李开广
  * Date: 2024/2/27 3:50 PM
  */
+@Data
 public class QcHolidayTargetDict {
 
     private Integer id;
