@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.kg.ctl.config.JobConstants;
 import org.kg.ctl.dao.enums.DataSourceEnum;
 import org.kg.ctl.dao.enums.InsertModeEnum;
@@ -33,6 +34,7 @@ import java.util.Objects;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Slf4j
 public class TaskPo {
 
     private String taskId;
@@ -125,7 +127,10 @@ public class TaskPo {
                     Assert.isTrue(plus.isBefore(LocalDateTime.now()), "increment sync current before interval not valid, no data happen future");
                 }
             } else {
-                Assert.isTrue(targetTime.contains("create"), "you choose full_sync time sync, should use like `create_time`");
+                if (targetTime.contains("create")) {
+                    log.warn("you choose full_sync time sync, should use like `create_time`");
+                }
+
                 Assert.isTrue(Objects.nonNull(getStartTime())
                         && Objects.nonNull(getEndTime())
                         && getStartTime().isBefore(getEndTime()), "you choose `full_sync`, but not set a valid time range");

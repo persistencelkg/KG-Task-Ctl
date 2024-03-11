@@ -99,7 +99,7 @@ public class TaskUtil {
 
     public static String getPrefixWithOutUnderLine(String tableName) {
         int i = tableName.lastIndexOf("_");
-        if (i < 0) {
+        if (i < 0 || !tableName.endsWith("_")) {
             return tableName;
         }
         return tableName.substring(0, i);

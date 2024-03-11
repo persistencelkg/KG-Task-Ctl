@@ -13,11 +13,13 @@ import javax.annotation.Resource;
  * Author: 李开广
  * Date: 2024/2/27 5:30 PM
  */
-@SpringBootTest
+@SpringBootTest(classes = QuickStartApplication.class)
 @RunWith(SpringRunner.class)
 public class TestApplication {
 
-    @Resource private SyncHolidayJob syncHolidayJob;
+    @Resource
+    private SyncHolidayJob syncHolidayJob;
+
     @Test
     public void testSync() {
         syncHolidayJob.run();

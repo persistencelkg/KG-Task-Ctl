@@ -1,6 +1,8 @@
 package org.kg.ctl.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.lkg.ding.DingDingMsg;
+import org.lkg.ding.DingDingUtil;
 import org.springframework.util.ObjectUtils;
 
 import java.text.MessageFormat;
@@ -10,8 +12,8 @@ import java.text.MessageFormat;
  * Date 2023/2/22 4:29 下午
  */
 @Slf4j
-public class DingDingUtil {
-    private static final String INFO_COLOR = "#000";
+public class DingDingUtils {
+    private static final String INFO_COLOR = "#111000";
     private static final String ERROR_COLOR = "#ff6666";
 
 
@@ -19,6 +21,7 @@ public class DingDingUtil {
 //        try {
 //            DingDingUtils.sendMessage(DingDingMsg.createMarkdown(phone, "--", MessageFormat.format("<font color=\"{0}\">{1}</font>", color, msg)), url, secret);
 //        } catch (Exception ignored) {}
+        DingDingUtil.sendMessage(DingDingMsg.createMarkDown("--", MessageFormat.format("<font color=\"{0}\">{1}</font>", color, msg)), url, secret, false, phone);
     }
 
 

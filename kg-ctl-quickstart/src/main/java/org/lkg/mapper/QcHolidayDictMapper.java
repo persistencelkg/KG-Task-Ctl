@@ -8,5 +8,6 @@ import org.lkg.pojo.QcHolidayDict;
  * Author: 李开广
  * Date: 2024/2/27 4:42 PM
  */
+//@DS("your datasource")
 public interface QcHolidayDictMapper extends SyncMapper<QcHolidayDict> {
 }

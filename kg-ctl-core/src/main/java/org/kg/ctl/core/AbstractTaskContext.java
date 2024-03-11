@@ -56,7 +56,7 @@ public abstract class AbstractTaskContext implements TableMetaData, TaskMachine,
 
     protected static final String UNIFIED = "#";
 
-    @Value("${spring.application.name:''}")
+    @Value("${spring.application.name:}")
     private String applicationName;
 
     @Value("${spring.profiles.active:local}")

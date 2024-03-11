@@ -37,6 +37,10 @@ public abstract class DataSyncCommonProcessor<Source, Target> extends AbstractTa
 
     protected abstract List<Target> convertToTargetObject(Collection<Source> sourceData, String tableName);
 
+    protected String targetTableName(String tableName) {
+        return TaskUtil.getPrefixWithOutUnderLine(tableName);
+    }
+
     @Override
     protected void batchProcessSourceData(Collection<Source> sourceData, String tableName, boolean insertCovert) {
         List<Target> objects = convertToTargetObject(sourceData, tableName);
@@ -44,7 +48,7 @@ public abstract class DataSyncCommonProcessor<Source, Target> extends AbstractTa
         String uniqueKey = uniqueKey();
         String column = TaskUtil.camelToUnderLine(uniqueKey);
         String property = TaskUtil.underLineToCamel(uniqueKey);
-        String keyPrefix = TaskUtil.getPrefixWithOutUnderLine(tableName);
+        String keyPrefix = targetTableName(tableName);
         List<Object> dbUniqueKeyList = objects.stream().map(ref -> CheckService.getFieldValue(ref, ref.getClass(), property)).collect(Collectors.toList());
         List<Target> tidbUniqueData = this.targetDbBatchQueryMapper.selectListWithUniqueKeyList(keyPrefix, column, dbUniqueKeyList);
 
