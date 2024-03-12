@@ -24,15 +24,16 @@
     <xxl-job.verison>2.3.0</xxl-job.verison>
     <jackson.version>2.11.2</jackson.version>
     <metric.version>1.1.0</metric.version>
+    <eighteen-arhat.version>1.0.0.RELEASE</eighteen-arhat.version>
   </properties>
 
 
   <dependencies>
 
     <dependency>
-      <groupId>org.lkg</groupId>
+      <groupId>io.github.persistencelkg</groupId>
       <artifactId>MessageNotice-Arhat</artifactId>
-      <version>1.0.0.RELEASE</version>
+      <version>${eighteen-arhat.version}</version>
     </dependency>
 
     <dependency>
