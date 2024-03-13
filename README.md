@@ -10,11 +10,13 @@
      <dependency>
         <groupId>io.github.persistencelkg</groupId>
         <artifactId>kg-ctl-core</artifactId>
-        <version>1.0.2.RELEASE</version>
+        <version>1.0.3.RELEASE</version>
      </dependency>
 ```
 
 ## 部分效果
+![showcase.gif](img%2Fshowcase.gif)
+
 1. 核心代码量【手动coding行数20行以内】
    ![co.png](img%2Fco.png)
 2. 效果展示- 日志收集
