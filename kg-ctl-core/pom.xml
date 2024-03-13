@@ -5,11 +5,11 @@
   <parent>
     <groupId>io.github.persistencelkg</groupId>
     <artifactId>kg-task-ctl</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3.RELEASE</version>
   </parent>
 
   <artifactId>kg-ctl-core</artifactId>
-  <version>1.0.3-SNAPSHOT</version>
+  <version>1.0.3.RELEASE</version>
   <packaging>jar</packaging>
 
   <name>kg-ctl-core</name>
