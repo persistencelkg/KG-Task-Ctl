@@ -5,11 +5,11 @@
   <parent>
     <groupId>io.github.persistencelkg</groupId>
     <artifactId>kg-task-ctl</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3.RELEASE</version>
   </parent>
 
   <artifactId>kg-ctl-core</artifactId>
-  <version>1.0.3-SNAPSHOT</version>
+  <version>1.0.3.RELEASE</version>
   <packaging>jar</packaging>
 
   <name>kg-ctl-core</name>
@@ -21,7 +21,7 @@
 
     <lombok.version>1.18.12</lombok.version>
     <mybatis-plus.verison>3.3.0</mybatis-plus.verison>
-    <xxl-job.verison>2.3.0</xxl-job.verison>
+    <xxl-job.verison>2.4.0</xxl-job.verison>
     <jackson.version>2.11.2</jackson.version>
     <metric.version>1.1.0</metric.version>
     <eighteen-arhat.version>1.0.0.RELEASE</eighteen-arhat.version>
@@ -51,6 +51,7 @@
       <groupId>com.xuxueli</groupId>
       <artifactId>xxl-job-core</artifactId>
       <version>${xxl-job.verison}</version>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -58,6 +59,7 @@
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -98,12 +100,6 @@
       <version>${jackson.version}</version>
 <!--      <scope>provided</scope>-->
     </dependency>
-
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-aspects</artifactId>
-    </dependency>
-
 
     <dependency>
       <groupId>io.micrometer</groupId>

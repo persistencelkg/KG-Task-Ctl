@@ -4,10 +4,10 @@
     <parent>
         <groupId>io.github.persistencelkg</groupId>
         <artifactId>kg-task-ctl</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.3.RELEASE</version>
     </parent>
     <artifactId>kg-ctl-quickstart</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3.RELEASE</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,12 +18,25 @@
         <dependency>
             <groupId>io.github.persistencelkg</groupId>
             <artifactId>kg-ctl-core</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
+            <version>1.0.3.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.xuxueli</groupId>
+            <artifactId>xxl-job-core</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>dynamic-datasource-spring-boot-starter</artifactId>
+            <version>3.4.0</version>
         </dependency>
 
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>

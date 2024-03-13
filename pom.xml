@@ -14,7 +14,7 @@
     <groupId>io.github.persistencelkg</groupId>
     <artifactId>kg-task-ctl</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3.RELEASE</version>
     <modules>
         <module>kg-ctl-core</module>
         <module>kg-ctl-quickstart</module>
