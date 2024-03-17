@@ -14,8 +14,13 @@
      </dependency>
 ```
 
+### 操作步骤
+参考```kg-ctl-quick-start```实践 <br>
+wiki: [使用文档](https://github.com/persistencelkg/KG-Task-Ctl/wiki/%E4%BD%8E%E4%BB%A3%E7%A0%81%E6%95%B0%E6%8D%AE%E6%B2%BB%E7%90%86-%E2%80%90%E2%80%90-%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3)
+
+
 ## 部分效果
-![showcase.gif](img%2Fshowcase.gif)
+![showcase.gif](img%2Fshow.gif)
 
 1. 核心代码量【手动coding行数20行以内】
    ![co.png](img%2Fco.png)
@@ -32,12 +37,13 @@
 ![ctl.png](img%2Fctl.png)
 
 
-### 应用场景
-Q1: 你是否开发过N多个框架相似，代码冗长的定时任务内嵌在业务代码中？
-A:```kg-ctl```可以减少你90%开发工作量，你仅仅只需要专注于你的同步动作那短短几行的代码逻辑
-
-Q2: 用习惯了黑盒同步工具，如果没有成本部署服务前提下，你如何自己开发一个白盒可控的同步任务？
-A: 使用本脚手架将是一个很好的辅助工具
+### 功能描述
+1. 面向通用数据治理，减少90%的重复冗余的数据同步工作开发
+2. 精细化控制任务频次、量级甚至可以联动高低峰时段
+3. 支持多维度数据同步，支持业务唯一id、时间段，包括分表
+4. 提供自动check同步数据源之间表结构差异，及时感知业务变更对目的数据源的影响
+5. 可视化监控告警
+6. 钉钉进度同步
 
 
 
@@ -48,10 +54,6 @@ A: 使用本脚手架将是一个很好的辅助工具
 
 
 
-
-### 实际操作
-参考```kg-ctl-quick-start```实践 <br>
-wiki: [使用文档](https://github.com/persistencelkg/KG-Task-Ctl/wiki/%E4%BD%8E%E4%BB%A3%E7%A0%81%E6%95%B0%E6%8D%AE%E6%B2%BB%E7%90%86-%E2%80%90%E2%80%90-%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3)
 
 
 
