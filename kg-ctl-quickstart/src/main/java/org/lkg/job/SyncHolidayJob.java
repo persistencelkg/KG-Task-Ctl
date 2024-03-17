@@ -27,7 +27,7 @@ public class SyncHolidayJob extends DataSyncCommonProcessor<QcHolidayDict, QcHol
         super(from, target, iService);
     }
 
-//        @XxlJob("SyncHolidayJob")
+    @XxlJob("SyncHolidayJob")
     public boolean run() {
         super.runTask();
         return true;
