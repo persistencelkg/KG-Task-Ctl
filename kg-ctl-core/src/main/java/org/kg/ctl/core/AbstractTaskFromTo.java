@@ -159,7 +159,7 @@ public abstract class AbstractTaskFromTo<Source, Target> extends AbstractTaskCon
         Integer integer = sourceDbBatchQueryMapper.selectCountWithTimeRange(tableId, targetTime, tempStart, end);
         long duration = (System.currentTimeMillis() - start) / 1000;
         if (Objects.nonNull(integer) && integer > QUERY_SIZE_PER_SEC) {
-            dingErrorLog(MessageFormat.format("{0}|current time interval too large，{} - {} query too much result set：{1}", getTaskId(), integer));
+            dingErrorLog(MessageFormat.format("{0}|current time interval too large, query too much result set：{1}", getTaskId(), integer));
         }
         if (duration > 2) {
             dingErrorLog(MessageFormat.format("{0}| current table:{1}, time field:{2}  may be lack in key_index, execute cost time:{3}s", getTaskId(), tableId, targetTime, duration));
