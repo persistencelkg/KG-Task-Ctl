@@ -15,11 +15,11 @@ import java.util.List;
  */
 public interface DbBatchQueryMapper<Source> {
 
-    String QUERY_MIN_MAX_ID_WITH_TIME = "SELECT MIN(id) as minId, MAX(id) as maxId  FROM ${tableId} WHERE ${targetTime} between #{startTime} and #{endTime}";
+    String QUERY_MIN_MAX_ID_WITH_TIME = "SELECT MIN(id) as minId, MAX(id) as maxId  FROM ${tableId} WHERE ${targetTime} &gt;= #{startTime} &lt;  #{endTime}";
     String SELECT_LIST_WITH_BIZ_ID = "<script>SELECT * FROM ${tableId} WHERE ${targetBizId} in <foreach item='item' collection='ids' open='(' separator=',' close=')'> #{item} </foreach></script>";
-    String SELECT_LIST_WITH_TABLE_ID_AND_TIME_RANGE = "select * from ${tableId} where id >= #{startId} and id <= #{maxId} and ${targetTime} between #{startTime} and #{endTime} limit #{batchSize}";
-    String SELECT_LIST_WITH_TIME_RANGE = "SELECT * FROM ${tableId} WHERE ${targetTime} between #{startTime} and #{endTime}";
-    String SELECT_COUNT_WITH_TIME_RANGE = "SELECT COUNT(1) FROM ${tableId} WHERE ${targetTime} between #{startTime} and #{endTime}";
+    String SELECT_LIST_WITH_TABLE_ID_AND_TIME_RANGE = "select * from ${tableId} where id >= #{startId} and id <= #{maxId} and ${targetTime} &gt;= #{startTime}  &lt; #{endTime} limit #{batchSize}";
+    String SELECT_LIST_WITH_TIME_RANGE = "SELECT * FROM ${tableId} WHERE ${targetTime} &gt;= #{startTime}  &lt; #{endTime}";
+    String SELECT_COUNT_WITH_TIME_RANGE = "SELECT COUNT(1) FROM ${tableId} WHERE ${targetTime} &gt;= #{startTime}  &lt; #{endTime}";
 
     @Select(QUERY_MIN_MAX_ID_WITH_TIME)
     IdRange queryMinIdWithTime(@Param("tableId") String tableId, @Param("targetTime") String targetTime,
