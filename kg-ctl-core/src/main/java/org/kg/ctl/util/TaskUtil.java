@@ -99,10 +99,18 @@ public class TaskUtil {
 
     public static String getPrefixWithOutUnderLine(String tableName) {
         int i = tableName.lastIndexOf("_");
-        if (i < 0 || !tableName.endsWith("_")) {
+        if (i < 0) {
             return tableName;
+        } else {
+            String tableIndex = tableName.substring(i + 1);
+            // 确保一定是分表
+            try {
+               Integer.parseInt(tableIndex);
+            } catch (NumberFormatException e) {
+                return tableName;
+            }
+            return tableName.substring(0, i);
         }
-        return tableName.substring(0, i);
     }
 
     public static String underLineToCamel(String str) {
